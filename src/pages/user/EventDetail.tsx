@@ -370,14 +370,14 @@ export default function EventDetail() {
             {event.TemplateURL ? (
               <div className="absolute inset-0 z-10">
                 {/* Name */}
-                <div className="absolute top-[255px] left-1/2 -translate-x-1/2 w-[500px] text-center flex justify-center items-center">
-                  <h2 className="text-[42px] font-bold text-black" style={{ fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive' }}>{user.Nama}</h2>
-                  
-                  {/* QR Code placed beside the name */}
-                  <div className="absolute left-[100%] ml-2 flex flex-col items-center bg-white p-1 rounded-sm shadow-sm">
-                    <QRCodeCanvas value={validationUrl} size={48} level="M" fgColor="#000000" />
-                    <p className="text-[6px] mt-0.5 text-black font-bold whitespace-nowrap">{certificate.CertNumber}</p>
-                  </div>
+                <div className="absolute top-[265px] left-1/2 -translate-x-1/2 w-[580px] h-[70px] flex justify-center items-center">
+                  <h2 className={`${user.Nama.length > 35 ? 'text-[28px]' : user.Nama.length > 25 ? 'text-[34px]' : 'text-[42px]'} font-bold text-black leading-none text-center`} style={{ fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive' }}>{user.Nama}</h2>
+                </div>
+                
+                {/* QR Code */}
+                <div className="absolute top-[305px] right-[85px] flex flex-col items-center bg-white p-1 rounded-sm shadow-sm">
+                  <QRCodeCanvas value={validationUrl} size={48} level="M" fgColor="#000000" />
+                  <p className="text-[6px] mt-0.5 text-black font-bold whitespace-nowrap">{certificate.CertNumber}</p>
                 </div>
 
                 {/* Health Status */}
