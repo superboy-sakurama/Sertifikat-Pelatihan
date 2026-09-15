@@ -198,12 +198,14 @@ export default function EventDetail() {
       });
       const imgData1 = canvas1.toDataURL('image/jpeg', 1.0);
       
+      const pdfWidth = certRef.current.offsetWidth;
+      const pdfHeight = certRef.current.offsetHeight;
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'px',
-        format: [canvas1.width, canvas1.height]
+        format: [pdfWidth, pdfHeight]
       });
-      pdf.addImage(imgData1, 'JPEG', 0, 0, canvas1.width, canvas1.height);
+      pdf.addImage(imgData1, 'JPEG', 0, 0, pdfWidth, pdfHeight);
 
       if (certPage2Ref.current) {
         const canvas2 = await html2canvas(certPage2Ref.current, { 
@@ -213,8 +215,10 @@ export default function EventDetail() {
           logging: false
         });
         const imgData2 = canvas2.toDataURL('image/jpeg', 1.0);
-        pdf.addPage([canvas2.width, canvas2.height], 'landscape');
-        pdf.addImage(imgData2, 'JPEG', 0, 0, canvas2.width, canvas2.height);
+        const pdfWidth2 = certPage2Ref.current.offsetWidth;
+        const pdfHeight2 = certPage2Ref.current.offsetHeight;
+        pdf.addPage([pdfWidth2, pdfHeight2], 'landscape');
+        pdf.addImage(imgData2, 'JPEG', 0, 0, pdfWidth2, pdfHeight2);
       }
 
       pdf.save(`${event.Judul}_Certificate_${user.Nama}.pdf`);
@@ -391,7 +395,7 @@ export default function EventDetail() {
 
       {/* Hidden Certificate Template for PDF Generation */}
       {isPostTestPass && (
-        <div className="absolute top-[-9999px] left-[-9999px] pointer-events-none flex flex-col gap-10">
+        <div className="fixed top-0 left-0 -z-50 pointer-events-none flex flex-col gap-10">
           <div ref={certRef} className={`w-[800px] h-[565px] bg-white relative flex flex-col items-center shrink-0 ${!backgroundImageUrl ? 'border-[10px] border-double border-blue-900 justify-center' : ''}`}>
             
             {/* Background Template Image */}
