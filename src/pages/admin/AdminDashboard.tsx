@@ -363,12 +363,16 @@ export default function AdminDashboard() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Template Sertifikat URL (Gambar)</label>
               
               <div className="flex flex-col gap-2">
-                <input type="file" accept="image/*" onChange={handleTemplateUpload} disabled={uploadingTemplate} className="w-full px-3 py-2 border rounded-md" />
+                <input type="text" placeholder="Masukkan URL gambar (misal: dari ImgBB / GDrive)" value={newEvent.TemplateURL} onChange={(e) => setNewEvent({...newEvent, TemplateURL: e.target.value})} className="w-full px-3 py-2 border rounded-md text-sm" />
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 whitespace-nowrap">Atau upload (Sementara):</span>
+                  <input type="file" accept="image/*" onChange={handleTemplateUpload} disabled={uploadingTemplate} className="w-full px-3 py-1 border rounded-md text-sm" />
+                </div>
                 {uploadingTemplate && <p className="text-xs text-blue-600">Mengupload...</p>}
                 {newEvent.TemplateURL && (
                   <div className="relative mt-2">
-                    <img src={newEvent.TemplateURL} alt="Template Preview" className="h-20 object-contain rounded border" />
-                    <button type="button" onClick={() => setNewEvent({...newEvent, TemplateURL: ''})} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">x</button>
+                    <img src={newEvent.TemplateURL} alt="Template Preview" className="h-20 object-contain rounded border" crossOrigin="anonymous" />
+                    <button type="button" onClick={() => setNewEvent({...newEvent, TemplateURL: ''})} className="absolute -top-2 -left-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">x</button>
                   </div>
                 )}
               </div>

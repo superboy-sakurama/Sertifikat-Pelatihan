@@ -380,4 +380,22 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
     res.sendFile(path.join('/tmp', req.params.filename));
   });
 
+
+  app.get('/api/proxy-image', async (req, res) => {
+    try {
+      const imageUrl = req.query.url as string;
+      if (!imageUrl) return res.status(400).send('URL is required');
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error('Failed to fetch image');
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const contentType = response.headers.get('content-type') || 'image/jpeg';
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.send(buffer);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
 export default app;

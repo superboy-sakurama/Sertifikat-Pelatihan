@@ -153,6 +153,18 @@ export default function EventDetail() {
     setActionLoading(true);
     
     try {
+      // Preload the template image explicitly to ensure it is fully fetched before canvas rendering
+      if (event.TemplateURL) {
+        const proxiedUrl = event.TemplateURL.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(event.TemplateURL)}` : event.TemplateURL;
+        await new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = resolve;
+          img.onerror = resolve; // Continue even if it fails, fallback
+          img.src = proxiedUrl;
+        });
+      }
+
       // Allow browser a moment to ensure images (like QR code and template) are fully rendered in the hidden div
       await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -356,12 +368,13 @@ export default function EventDetail() {
       {/* Hidden Certificate Template for PDF Generation */}
       {isPostTestPass && (
         <div className="fixed top-0 left-0 w-0 h-0 overflow-hidden pointer-events-none opacity-0 flex flex-col gap-10">
-          <div ref={certRef} className={`w-[800px] h-[565px] bg-white relative flex flex-col items-center shrink-0 ${!event.TemplateURL ? 'border-[10px] border-double border-blue-900 justify-center' : ''}`} style={{
-            backgroundImage: event.TemplateURL ? `url(${event.TemplateURL})` : 'none',
-            backgroundSize: 'cover',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center'
-          }}>
+          <div ref={certRef} className={`w-[800px] h-[565px] bg-white relative flex flex-col items-center shrink-0 ${!event.TemplateURL ? 'border-[10px] border-double border-blue-900 justify-center' : ''}`}>
+            
+            {/* Background Template Image */}
+            {event.TemplateURL && (
+              <img src={event.TemplateURL.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(event.TemplateURL)}` : event.TemplateURL} crossOrigin="anonymous" alt="Template" className="absolute inset-0 w-full h-full object-cover z-0" />
+            )}
+
             {/* Fallback styling if no template image */}
             {!event.TemplateURL && (
               <div className="absolute inset-0 bg-blue-50 opacity-50 z-0"></div>
