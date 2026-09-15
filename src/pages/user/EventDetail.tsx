@@ -11,6 +11,7 @@ export default function EventDetail() {
   const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [base64Template, setBase64Template] = useState<string | null>(null);
   const certRef = useRef<HTMLDivElement>(null);
   const certPage2Ref = useRef<HTMLDivElement>(null);
 
@@ -158,13 +159,32 @@ export default function EventDetail() {
       // Preload the template image explicitly to ensure it is fully fetched before canvas rendering
       if (backgroundImageUrl) {
         const proxiedUrl = backgroundImageUrl.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(backgroundImageUrl)}` : backgroundImageUrl;
-        await new Promise((resolve) => {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          img.onload = resolve;
-          img.onerror = resolve; // Continue even if it fails, fallback
-          img.src = proxiedUrl;
-        });
+        try {
+          const response = await fetch(proxiedUrl);
+          if (!response.ok) throw new Error('Gagal mengambil template sertifikat dari proxy');
+          
+          if (proxiedUrl.includes('/api/proxy-image')) {
+            const data = await response.json();
+            if (data.base64) {
+              setBase64Template(data.base64);
+            } else {
+              throw new Error(data.error || 'Base64 tidak ditemukan');
+            }
+          } else {
+            // Fallback if not using proxy (e.g. local image)
+            const blob = await response.blob();
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+            setBase64Template(base64);
+          }
+        } catch (e: any) {
+          console.error("Failed to load background image:", e);
+          alert("Peringatan: Gagal memuat background template sertifikat. (" + e.message + ")");
+        }
       }
 
       // Allow browser a moment to ensure images (like QR code and template) are fully rendered in the hidden div
@@ -203,6 +223,7 @@ export default function EventDetail() {
       alert("Gagal generate PDF");
     } finally {
       setActionLoading(false);
+      setBase64Template(null);
     }
   };
 
@@ -370,12 +391,12 @@ export default function EventDetail() {
 
       {/* Hidden Certificate Template for PDF Generation */}
       {isPostTestPass && (
-        <div className="fixed top-0 left-0 w-0 h-0 overflow-hidden pointer-events-none opacity-0 flex flex-col gap-10">
+        <div className="absolute top-[-9999px] left-[-9999px] pointer-events-none flex flex-col gap-10">
           <div ref={certRef} className={`w-[800px] h-[565px] bg-white relative flex flex-col items-center shrink-0 ${!backgroundImageUrl ? 'border-[10px] border-double border-blue-900 justify-center' : ''}`}>
             
             {/* Background Template Image */}
             {backgroundImageUrl && (
-              <img src={backgroundImageUrl.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(backgroundImageUrl)}` : backgroundImageUrl} crossOrigin="anonymous" alt="Template" className="absolute inset-0 w-full h-full object-cover z-0" />
+              <img src={base64Template || (backgroundImageUrl.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(backgroundImageUrl)}` : backgroundImageUrl)} crossOrigin="anonymous" alt="Template" className="absolute inset-0 w-full h-full object-cover z-0" />
             )}
 
             {/* Fallback styling if no template image */}
