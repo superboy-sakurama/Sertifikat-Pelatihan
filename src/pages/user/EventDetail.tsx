@@ -194,17 +194,15 @@ export default function EventDetail() {
         scale: 2,
         useCORS: true,
         allowTaint: false,
-        logging: false
+        logging: false,
+        scrollX: 0,
+        scrollY: -window.scrollY
       });
       const imgData1 = canvas1.toDataURL('image/jpeg', 1.0);
       
-      const pdfWidth = certRef.current.offsetWidth;
-      const pdfHeight = certRef.current.offsetHeight;
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'px',
-        format: [pdfWidth, pdfHeight]
-      });
+      const pdf = new jsPDF('l', 'mm', 'a4');
+      const pdfWidth = 297;
+      const pdfHeight = 210;
       pdf.addImage(imgData1, 'JPEG', 0, 0, pdfWidth, pdfHeight);
 
       if (certPage2Ref.current) {
@@ -212,13 +210,13 @@ export default function EventDetail() {
           scale: 2,
           useCORS: true,
           allowTaint: false,
-          logging: false
+          logging: false,
+          scrollX: 0,
+          scrollY: -window.scrollY
         });
         const imgData2 = canvas2.toDataURL('image/jpeg', 1.0);
-        const pdfWidth2 = certPage2Ref.current.offsetWidth;
-        const pdfHeight2 = certPage2Ref.current.offsetHeight;
-        pdf.addPage([pdfWidth2, pdfHeight2], 'landscape');
-        pdf.addImage(imgData2, 'JPEG', 0, 0, pdfWidth2, pdfHeight2);
+        pdf.addPage('a4', 'l');
+        pdf.addImage(imgData2, 'JPEG', 0, 0, 297, 210);
       }
 
       pdf.save(`${event.Judul}_Certificate_${user.Nama}.pdf`);
@@ -294,7 +292,7 @@ export default function EventDetail() {
           </div>
         ))}
         <div className="flex gap-2 justify-end">
-          <button type="button" onClick={() => setActiveQuiz('none')} className="px-4 py-2 text-gray-600">Batal</button>
+          <button type="button" onClick={() => setActiveQuiz('none')} className="px-4 py-2 text-gray-600 text-xl">Batal</button>
           <button type="submit" disabled={actionLoading} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">{actionLoading ? 'Menyimpan...' : 'Kirim Jawaban'}</button>
         </div>
       </form>
@@ -396,7 +394,7 @@ export default function EventDetail() {
       {/* Hidden Certificate Template for PDF Generation */}
       {isPostTestPass && (
         <div className="fixed top-0 left-0 -z-50 pointer-events-none flex flex-col gap-10">
-          <div ref={certRef} className={`w-[800px] h-[565px] bg-white relative flex flex-col items-center shrink-0 ${!backgroundImageUrl ? 'border-[10px] border-double border-blue-900 justify-center' : ''}`}>
+          <div ref={certRef} className={`w-[1122px] h-[794px] bg-white relative flex flex-col items-center shrink-0 ${!backgroundImageUrl ? 'border-[10px] border-double border-blue-900 justify-center' : ''}`}>
             
             {/* Background Template Image */}
             {backgroundImageUrl && (
@@ -411,40 +409,40 @@ export default function EventDetail() {
             {backgroundImageUrl ? (
               <div className="absolute inset-0 z-10">
                 {/* Name */}
-                <div className="absolute top-[265px] left-1/2 -translate-x-1/2 w-[580px] h-[70px] flex justify-center items-center">
-                  <h2 className={`${user.Nama.length > 35 ? 'text-[28px]' : user.Nama.length > 25 ? 'text-[34px]' : 'text-[42px]'} font-bold text-black leading-none text-center`} style={{ fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive' }}>{user.Nama}</h2>
+                <div className="absolute top-[372px] left-1/2 -translate-x-1/2 w-[813px] h-[98px] flex justify-center items-center">
+                  <h2 className={`${user.Nama.length > 35 ? 'text-[39px]' : user.Nama.length > 25 ? 'text-[48px]' : 'text-[59px]'} font-bold text-black leading-none text-center`} style={{ fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive' }}>{user.Nama}</h2>
                 </div>
                 
                 {/* QR Code */}
-                <div className="absolute top-[305px] right-[85px] flex flex-col items-center bg-white p-1 rounded-sm shadow-sm">
-                  <QRCodeCanvas value={validationUrl} size={48} level="M" fgColor="#000000" />
-                  <p className="text-[6px] mt-0.5 text-black font-bold whitespace-nowrap">{certificate.CertNumber}</p>
+                <div className="absolute top-[429px] right-[119px] flex flex-col items-center bg-white p-1 rounded-sm shadow-sm">
+                  <QRCodeCanvas value={validationUrl} size={67} level="M" fgColor="#000000" />
+                  <p className="text-[8px] mt-0.5 text-black font-bold whitespace-nowrap">{certificate.CertNumber}</p>
                 </div>
 
                 {/* Health Status */}
-                <div className="absolute top-[362px] left-1/2 -translate-x-1/2 w-[400px] text-center flex justify-center">
-                  <h4 className="text-[22px] font-bold text-white uppercase tracking-widest mt-0.5">
+                <div className="absolute top-[509px] left-1/2 -translate-x-1/2 w-[561px] text-center flex justify-center">
+                  <h4 className="text-[31px] font-bold text-white uppercase tracking-widest mt-0.5">
                     {healthStatus === 'Laik' ? 'SEHAT / LAIK SEHAT' : healthStatus}
                   </h4>
                 </div>
 
                 {/* Date */}
-                <div className="absolute top-[402px] left-[450px]">
-                  <p className="text-[14px] text-black font-bold">{formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}</p>
+                <div className="absolute top-[565px] left-[631px]">
+                  <p className="text-[20px] text-black font-bold">{formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}</p>
                 </div>
 
                 {/* Signatures */}
-                <div className="absolute bottom-[40px] w-full px-20 flex justify-between">
-                  <div className="text-center w-56 flex flex-col items-center pl-8">
+                <div className="absolute bottom-[56px] w-full px-[112px] flex justify-between">
+                  <div className="text-center w-[314px] flex flex-col items-center pl-[45px]">
                     {event.TTD1_Nama && (
                       <div className="w-max px-2">
-                        <p className="font-bold text-[12px] text-black">{event.TTD1_Nama}</p>
+                        <p className="font-bold text-[17px] text-black">{event.TTD1_Nama}</p>
                       </div>
                     )}
-                    {event.TTD1_NIP && <p className="text-[10px] text-black font-medium">{event.TTD1_NIP}</p>}
+                    {event.TTD1_NIP && <p className="text-[14px] text-black font-medium">{event.TTD1_NIP}</p>}
                   </div>
 
-                  <div className="text-center w-64 flex flex-col items-center pr-4">
+                  <div className="text-center w-[358px] flex flex-col items-center pr-[22px]">
                     {event.TTD2_Nama && (
                       <div className="w-max px-2">
                         <p className="font-bold text-[12px] text-black">{event.TTD2_Nama}</p>
@@ -531,7 +529,7 @@ export default function EventDetail() {
           
           {/* Certificate Page 2: Health Details */}
           {healthDetails && (
-            <div ref={certPage2Ref} className="w-[800px] h-[565px] bg-white relative flex flex-col items-center justify-center p-12 text-center shrink-0 border-[10px] border-double border-blue-900" style={{
+            <div ref={certPage2Ref} className="w-[1122px] h-[794px] bg-white relative flex flex-col items-center justify-center p-12 text-center shrink-0 border-[10px] border-double border-blue-900" style={{
               backgroundImage: 'none',
               backgroundSize: 'cover',
               backgroundRepeat: 'no-repeat',
@@ -539,43 +537,43 @@ export default function EventDetail() {
             }}>
               <div className="absolute inset-0 bg-blue-50 opacity-50 z-0"></div>
               <div className="z-10 bg-white/90 p-8 w-[85%] h-full flex flex-col relative rounded-md shadow-sm border border-gray-100">
-                <h2 className="text-2xl font-serif font-bold text-[#1a5b57] mb-6 uppercase tracking-widest text-center border-b border-gray-300 pb-4">
+                <h2 className="text-4xl font-serif font-bold text-[#1a5b57] mb-6 uppercase tracking-widest text-center border-b border-gray-300 pb-4">
                   Hasil Pemeriksaan Kesehatan
                 </h2>
                 
-                <div className="flex-1 space-y-6 text-left">
+                <div className="flex-1 space-y-8 text-left text-lg">
                   <div>
-                    <h3 className="font-bold text-[#1a5b57] mb-3 bg-[#e8f1f0] px-4 py-2 rounded">Pemeriksaan Dasar</h3>
+                    <h3 className="font-bold text-[#1a5b57] mb-4 text-2xl bg-[#e8f1f0] px-4 py-2 rounded">Pemeriksaan Dasar</h3>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-3 px-4">
                       <div className="flex justify-between border-b border-gray-100 pb-1">
-                        <span className="text-gray-600">Berat Badan (BB)</span>
-                        <span className="font-semibold text-gray-800">{healthDetails.BB || '-'}</span>
+                        <span className="text-gray-600 text-xl">Berat Badan (BB)</span>
+                        <span className="font-semibold text-gray-800 text-xl">{healthDetails.BB || '-'}</span>
                       </div>
                       <div className="flex justify-between border-b border-gray-100 pb-1">
-                        <span className="text-gray-600">Tinggi Badan (TB)</span>
-                        <span className="font-semibold text-gray-800">{healthDetails.TB || '-'}</span>
+                        <span className="text-gray-600 text-xl">Tinggi Badan (TB)</span>
+                        <span className="font-semibold text-gray-800 text-xl">{healthDetails.TB || '-'}</span>
                       </div>
                       <div className="flex justify-between border-b border-gray-100 pb-1">
-                        <span className="text-gray-600">Tekanan Darah</span>
-                        <span className="font-semibold text-gray-800">{healthDetails.TekananDarah || '-'}</span>
+                        <span className="text-gray-600 text-xl">Tekanan Darah</span>
+                        <span className="font-semibold text-gray-800 text-xl">{healthDetails.TekananDarah || '-'}</span>
                       </div>
                       <div className="flex justify-between border-b border-gray-100 pb-1">
-                        <span className="text-gray-600">Gula Darah Acak (GDA)</span>
-                        <span className="font-semibold text-gray-800">{healthDetails.GDA || '-'}</span>
+                        <span className="text-gray-600 text-xl">Gula Darah Acak (GDA)</span>
+                        <span className="font-semibold text-gray-800 text-xl">{healthDetails.GDA || '-'}</span>
                       </div>
                       <div className="flex justify-between border-b border-gray-100 pb-1 col-span-2">
-                        <span className="text-gray-600">Skrining TB</span>
-                        <span className="font-semibold text-gray-800">{healthDetails.SkriningTB || '-'}</span>
+                        <span className="text-gray-600 text-xl">Skrining TB</span>
+                        <span className="font-semibold text-gray-800 text-xl">{healthDetails.SkriningTB || '-'}</span>
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <h3 className="font-bold text-[#1a5b57] mb-3 bg-[#e8f1f0] px-4 py-2 rounded">Pemeriksaan Penyakit Menular</h3>
+                    <h3 className="font-bold text-[#1a5b57] mb-4 text-2xl bg-[#e8f1f0] px-4 py-2 rounded">Pemeriksaan Penyakit Menular</h3>
                     <div className="px-4">
                       <div className="flex justify-between border-b border-gray-100 pb-1 max-w-sm">
-                        <span className="text-gray-600">HBsAg</span>
-                        <span className="font-semibold text-gray-800">{healthDetails.HBsAg || '-'}</span>
+                        <span className="text-gray-600 text-xl">HBsAg</span>
+                        <span className="font-semibold text-gray-800 text-xl">{healthDetails.HBsAg || '-'}</span>
                       </div>
                     </div>
                   </div>
