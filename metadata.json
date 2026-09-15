@@ -1,0 +1,8 @@
+{
+  "name": "Aplikasi Sertifikat Pelatihan PKM KALITENGAH",
+  "description": "Sistem Manajemen dan Penerbitan Sertifikat Pelatihan Online",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
