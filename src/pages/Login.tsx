@@ -89,48 +89,42 @@ export default function Login() {
             <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
             Mengecek koneksi database...
           </div>
-        ) : (
+        ) : sysStatus?.status === 'connected' ? (
           <div className={`border rounded-lg p-3 text-sm flex items-start gap-3 ${
-            sysStatus?.status === 'connected' && sysStatus?.hasUsersData ? 'bg-green-50 border-green-200 text-green-800' :
-            sysStatus?.status === 'connected' && !sysStatus?.hasUsersData ? 'bg-yellow-50 border-yellow-200 text-yellow-800' :
-            'bg-red-50 border-red-200 text-red-800'
+            sysStatus?.hasUsersData ? 'bg-green-50 border-green-200 text-green-800' : 'bg-yellow-50 border-yellow-200 text-yellow-800'
           }`}>
-            {sysStatus?.status === 'connected' ? (
-               sysStatus?.hasUsersData ? <CheckCircle2 className="shrink-0 mt-0.5 text-green-600" size={18} /> : <AlertCircle className="shrink-0 mt-0.5 text-yellow-600" size={18} />
-            ) : <Database className="shrink-0 mt-0.5 text-red-600" size={18} />}
+            {sysStatus?.hasUsersData ? <CheckCircle2 className="shrink-0 mt-0.5 text-green-600" size={18} /> : <AlertCircle className="shrink-0 mt-0.5 text-yellow-600" size={18} />}
             
             <div>
               <p className="font-semibold">{sysStatus?.message}</p>
-              {sysStatus?.status === 'connected' && (
-                <div className="mt-1 text-xs opacity-90">
-                  <p>Spreadsheet: <strong>{sysStatus.spreadsheetTitle}</strong></p>
-                  
-                  {!sysStatus.hasServiceAccount && (
-                     <p className="mt-1 text-orange-600 font-medium">⚠️ Akun Layanan belum diatur. Penulisan data akan menggunakan Mock Demo.</p>
-                  )}
-                  
-                  {!sysStatus.hasUsersTab && <p className="mt-1 font-bold text-red-600">⚠️ Tab 'Users' tidak ditemukan!</p>}
-                  {sysStatus.hasUsersTab && !sysStatus.hasUsersData && <p className="mt-1 font-bold text-red-600">⚠️ Tab 'Users' kosong. Aplikasi tidak bisa login jika tidak ada data akun!</p>}
-                  
-                  {(!sysStatus.hasUsersTab || !sysStatus.hasUsersData) && sysStatus.hasServiceAccount && (
-                    <button 
-                      type="button"
-                      onClick={handleInitialize}
-                      disabled={initializing}
-                      className="mt-2 bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {initializing ? 'Menginisialisasi...' : 'Inisialisasi Tab & Data Otomatis'}
-                    </button>
-                  )}
-                  
-                  {(!sysStatus.hasUsersTab || !sysStatus.hasUsersData) && !sysStatus.hasServiceAccount && (
-                    <p className="mt-2 text-red-600 italic font-medium">Untuk menggunakan Inisialisasi Otomatis, Anda wajib memasukkan GOOGLE_SERVICE_ACCOUNT_EMAIL dan GOOGLE_PRIVATE_KEY di pengaturan AI Studio.</p>
-                  )}
-                </div>
-              )}
+              <div className="mt-1 text-xs opacity-90">
+                <p>Spreadsheet: <strong>{sysStatus.spreadsheetTitle}</strong></p>
+                
+                {!sysStatus.hasServiceAccount && (
+                   <p className="mt-1 text-orange-600 font-medium">⚠️ Akun Layanan belum diatur. Penulisan data akan menggunakan Mock Demo.</p>
+                )}
+                
+                {!sysStatus.hasUsersTab && <p className="mt-1 font-bold text-red-600">⚠️ Tab 'Users' tidak ditemukan!</p>}
+                {sysStatus.hasUsersTab && !sysStatus.hasUsersData && <p className="mt-1 font-bold text-red-600">⚠️ Tab 'Users' kosong. Aplikasi tidak bisa login jika tidak ada data akun!</p>}
+                
+                {(!sysStatus.hasUsersTab || !sysStatus.hasUsersData) && sysStatus.hasServiceAccount && (
+                  <button 
+                    type="button"
+                    onClick={handleInitialize}
+                    disabled={initializing}
+                    className="mt-2 bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {initializing ? 'Menginisialisasi...' : 'Inisialisasi Tab & Data Otomatis'}
+                  </button>
+                )}
+                
+                {(!sysStatus.hasUsersTab || !sysStatus.hasUsersData) && !sysStatus.hasServiceAccount && (
+                  <p className="mt-2 text-red-600 italic font-medium">Untuk menggunakan Inisialisasi Otomatis, Anda wajib memasukkan GOOGLE_SERVICE_ACCOUNT_EMAIL dan GOOGLE_PRIVATE_KEY di pengaturan AI Studio.</p>
+                )}
+              </div>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-100 p-8">
@@ -192,14 +186,6 @@ export default function Login() {
             <UserPlus size={17} />
             Daftar sebagai Peserta Baru
           </Link>
-        </div>
-
-        <div className="mt-6 border-t pt-4">
-          <p className="text-xs text-gray-500 mb-2">Demo Accounts (Jika sheet belum ada):</p>
-          <ul className="text-xs text-gray-600 space-y-1">
-            <li>Admin: admin@example.com / 12345</li>
-            <li>User: user@example.com / 12345</li>
-          </ul>
         </div>
       </div>
     </div>
