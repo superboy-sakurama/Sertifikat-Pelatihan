@@ -144,7 +144,8 @@ export default function AdminDashboard() {
         newEvent.TTD2_Nama,
         newEvent.TTD_LayoutConfig,
         newEvent.TTD1_NIP || '',
-        newEvent.TTD2_NIP || ''
+        newEvent.TTD2_NIP || '',
+        `=IF(ISBLANK(INDIRECT("G"&ROW())), "", IMAGE(INDIRECT("G"&ROW())))` // Column M (TemplateImage)
       ];
       
       if (isEditing) {

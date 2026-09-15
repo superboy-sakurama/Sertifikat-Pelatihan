@@ -113,7 +113,7 @@ async function startServer() {
       // Define required sheets and headers
       const requiredSheets: Record<string, string[]> = {
         'Users': ['ID', 'Role', 'Nama', 'Email', 'Password'],
-        'Events': ['EventID', 'Judul', 'Tema', 'TanggalMulai', 'TanggalSelesai', 'TanggalPelaksanaan', 'TemplateURL', 'TTD1_Nama', 'TTD2_Nama', 'TTD_LayoutConfig'],
+        'Events': ['EventID', 'Judul', 'Tema', 'TanggalMulai', 'TanggalSelesai', 'TanggalPelaksanaan', 'TemplateURL', 'TTD1_Nama', 'TTD2_Nama', 'TTD_LayoutConfig', 'TTD1_NIP', 'TTD2_NIP', 'TemplateImage'],
         'Registrations': ['RegID', 'UserID', 'EventID', 'Status'],
         'Attendance': ['AttID', 'RegID', 'Timestamp'],
         'Tests': ['TestID', 'RegID', 'PreTestScore', 'PostTestScore', 'IsCompleted'],
@@ -188,8 +188,8 @@ async function startServer() {
       ['USR-2', 'User', 'Peserta Satu', 'user@example.com', '12345']
     ],
     'Events': [
-      ['EventID', 'Judul', 'Tema', 'TanggalMulai', 'TanggalSelesai', 'TanggalPelaksanaan', 'TemplateURL', 'TTD1_Nama', 'TTD2_Nama', 'TTD_LayoutConfig', 'TTD1_NIP', 'TTD2_NIP'],
-      ['EVT-1', 'Pelatihan Dasar Web Development', '', '2023-11-01', '2023-11-02', '2023-11-03', 'https://i.ibb.co/hW0t3y1/template-sertifikat-kosong.jpg', 'Budi Santoso, M.Kom', '', 'Kiri', '', '']
+      ['EventID', 'Judul', 'Tema', 'TanggalMulai', 'TanggalSelesai', 'TanggalPelaksanaan', 'TemplateURL', 'TTD1_Nama', 'TTD2_Nama', 'TTD_LayoutConfig', 'TTD1_NIP', 'TTD2_NIP', 'TemplateImage'],
+      ['EVT-1', 'Pelatihan Dasar Web Development', '', '2023-11-01', '2023-11-02', '2023-11-03', 'https://i.ibb.co/hW0t3y1/template-sertifikat-kosong.jpg', 'Budi Santoso, M.Kom', '', 'Kiri', '', '', '=IMAGE(INDIRECT("G"&ROW()))']
     ],
     'Registrations': [
       ['RegID', 'UserID', 'EventID', 'Status']

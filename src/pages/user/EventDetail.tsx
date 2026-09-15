@@ -27,6 +27,8 @@ export default function EventDetail() {
   const [healthStatus, setHealthStatus] = useState<string>('Belum Dinilai');
   const [healthDetails, setHealthDetails] = useState<any>(null);
 
+  const backgroundImageUrl = (event && event.TemplateImage && event.TemplateImage.startsWith('http')) ? event.TemplateImage : (event ? event.TemplateURL : '');
+
   const loadData = async () => {
     try {
       const [events, regs, atts, tests, certs, questions, healthAssessments] = await Promise.all([
@@ -154,8 +156,8 @@ export default function EventDetail() {
     
     try {
       // Preload the template image explicitly to ensure it is fully fetched before canvas rendering
-      if (event.TemplateURL) {
-        const proxiedUrl = event.TemplateURL.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(event.TemplateURL)}` : event.TemplateURL;
+      if (backgroundImageUrl) {
+        const proxiedUrl = backgroundImageUrl.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(backgroundImageUrl)}` : backgroundImageUrl;
         await new Promise((resolve) => {
           const img = new Image();
           img.crossOrigin = 'anonymous';
@@ -274,6 +276,7 @@ export default function EventDetail() {
     );
   };
 
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
@@ -368,19 +371,19 @@ export default function EventDetail() {
       {/* Hidden Certificate Template for PDF Generation */}
       {isPostTestPass && (
         <div className="fixed top-0 left-0 w-0 h-0 overflow-hidden pointer-events-none opacity-0 flex flex-col gap-10">
-          <div ref={certRef} className={`w-[800px] h-[565px] bg-white relative flex flex-col items-center shrink-0 ${!event.TemplateURL ? 'border-[10px] border-double border-blue-900 justify-center' : ''}`}>
+          <div ref={certRef} className={`w-[800px] h-[565px] bg-white relative flex flex-col items-center shrink-0 ${!backgroundImageUrl ? 'border-[10px] border-double border-blue-900 justify-center' : ''}`}>
             
             {/* Background Template Image */}
-            {event.TemplateURL && (
-              <img src={event.TemplateURL.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(event.TemplateURL)}` : event.TemplateURL} crossOrigin="anonymous" alt="Template" className="absolute inset-0 w-full h-full object-cover z-0" />
+            {backgroundImageUrl && (
+              <img src={backgroundImageUrl.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(backgroundImageUrl)}` : backgroundImageUrl} crossOrigin="anonymous" alt="Template" className="absolute inset-0 w-full h-full object-cover z-0" />
             )}
 
             {/* Fallback styling if no template image */}
-            {!event.TemplateURL && (
+            {!backgroundImageUrl && (
               <div className="absolute inset-0 bg-blue-50 opacity-50 z-0"></div>
             )}
             
-            {event.TemplateURL ? (
+            {backgroundImageUrl ? (
               <div className="absolute inset-0 z-10">
                 {/* Name */}
                 <div className="absolute top-[265px] left-1/2 -translate-x-1/2 w-[580px] h-[70px] flex justify-center items-center">
