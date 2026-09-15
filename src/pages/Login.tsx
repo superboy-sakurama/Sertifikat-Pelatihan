@@ -1,7 +1,7 @@
 import { useState, FormEvent, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { fetchSheetData, fetchSystemStatus } from '../lib/api';
-import { Database, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Database, AlertCircle, CheckCircle2, UserPlus } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -173,7 +173,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition disabled:opacity-70 flex justify-center items-center h-11"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition disabled:opacity-70 flex justify-center items-center h-11 shadow-sm"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -183,7 +183,18 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="mt-8 border-t pt-6">
+        <div className="mt-6 pt-5 border-t border-gray-100 text-center">
+          <p className="text-sm text-gray-600 mb-3">Belum memiliki akun peserta?</p>
+          <Link
+            to="/register"
+            className="w-full inline-flex items-center justify-center gap-2 border border-blue-600 text-blue-600 hover:bg-blue-50 font-medium py-2 px-4 rounded-lg transition text-sm"
+          >
+            <UserPlus size={17} />
+            Daftar sebagai Peserta Baru
+          </Link>
+        </div>
+
+        <div className="mt-6 border-t pt-4">
           <p className="text-xs text-gray-500 mb-2">Demo Accounts (Jika sheet belum ada):</p>
           <ul className="text-xs text-gray-600 space-y-1">
             <li>Admin: admin@example.com / 12345</li>

@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { fetchSheetData, appendSheetData, updateSheetData } from '../../lib/api';
 import { Plus, Loader2, Edit } from 'lucide-react';
 
@@ -33,7 +33,7 @@ export default function AdminDashboard() {
   const [showEventForm, setShowEventForm] = useState(false);
 
   const [uploadingTemplate, setUploadingTemplate] = useState(false);
-  const handleTemplateUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTemplateUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0]) return;
     const file = e.target.files[0];
     

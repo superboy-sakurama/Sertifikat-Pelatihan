@@ -9,6 +9,7 @@ import UserDashboard from './pages/user/UserDashboard';
 import EventDetail from './pages/user/EventDetail';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Validation from './pages/Validation';
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/validate/:certId" element={<Validation />} />
         
         <Route path="/" element={<Layout />}>

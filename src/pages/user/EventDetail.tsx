@@ -202,6 +202,28 @@ export default function EventDetail() {
 
   const validationUrl = `${window.location.origin}/validate/${certificate?.CertID || ''}`;
 
+  const formatDateIndonesian = (dateString: string) => {
+    if (!dateString) return '';
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    try {
+      const parts = dateString.split('-');
+      if (parts.length === 3) {
+        const year = parts[0];
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        return `${day} ${months[month]} ${year}`;
+      }
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
+      }
+    } catch (e) {}
+    return dateString;
+  };
+
   const renderQuizForm = (type: 'PRETEST' | 'POSTTEST') => {
     const questions = allQuestions.filter(q => q.EventID === eventId && q.Type === type);
     if (questions.length === 0) return <p className="p-4 text-gray-500">Belum ada soal ujian yang ditambahkan oleh Admin.</p>;
@@ -244,9 +266,9 @@ export default function EventDetail() {
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{event.Judul}</h1>
-        <p className="text-gray-500">Tanggal: {event.TanggalMulai} s/d {event.TanggalSelesai}</p>
+        <p className="text-gray-500">Tanggal: {formatDateIndonesian(event.TanggalMulai)} s/d {formatDateIndonesian(event.TanggalSelesai)}</p>
         {event.TanggalPelaksanaan && (
-          <p className="text-gray-500">Tanggal Pelaksanaan / Pemeriksaan: {event.TanggalPelaksanaan}</p>
+          <p className="text-gray-500">Tanggal Pelaksanaan / Pemeriksaan: {formatDateIndonesian(event.TanggalPelaksanaan)}</p>
         )}
       </div>
 
@@ -334,101 +356,147 @@ export default function EventDetail() {
       {/* Hidden Certificate Template for PDF Generation */}
       {isPostTestPass && (
         <div className="fixed top-0 left-0 w-0 h-0 overflow-hidden pointer-events-none opacity-0 flex flex-col gap-10">
-          <div ref={certRef} className="w-[800px] h-[565px] bg-white relative flex flex-col items-center justify-center p-12 text-center border-[10px] border-double border-blue-900 shrink-0" style={{
+          <div ref={certRef} className={`w-[800px] h-[565px] bg-white relative flex flex-col items-center shrink-0 ${!event.TemplateURL ? 'border-[10px] border-double border-blue-900 justify-center' : ''}`} style={{
             backgroundImage: event.TemplateURL ? `url(${event.TemplateURL})` : 'none',
-            backgroundSize: 'cover'
+            backgroundSize: 'cover',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center'
           }}>
             {/* Fallback styling if no template image */}
             {!event.TemplateURL && (
               <div className="absolute inset-0 bg-blue-50 opacity-50 z-0"></div>
             )}
             
-            <div className="z-10 p-6 w-full h-full flex flex-col items-center relative">
-              <h1 className="text-5xl font-serif font-bold text-[#1a5b57] mb-2 uppercase tracking-widest mt-12">SERTIFIKAT</h1>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-16 h-px bg-[#1a5b57]"></div>
-                <h2 className="text-lg font-bold text-[#1a5b57] uppercase tracking-wider">{event.Judul}</h2>
-                <div className="w-16 h-px bg-[#1a5b57]"></div>
-              </div>
-              
-              {event.Tema && (
-                <div className="bg-[#1a5b57] text-white px-10 py-1.5 mb-6 shadow-md rounded-sm flex items-center gap-2">
-                  <span className="text-green-300">🌿</span>
-                  <h3 className="text-xl font-bold tracking-wider">{event.Tema}</h3>
-                  <span className="text-green-300">🌿</span>
-                </div>
-              )}
-              
-              <div className="flex items-center gap-3 mb-2 mt-2">
-                <span className="text-[#1a5b57] font-bold text-lg">➔</span>
-                <p className="text-[#1a5b57] font-bold text-sm tracking-widest uppercase">Diberikan Kepada</p>
-                <span className="text-[#1a5b57] font-bold text-lg">⬅</span>
-              </div>
-              
-              <div className="relative inline-block mb-2 mt-1">
-                 <h2 className="text-3xl font-bold text-black font-serif border-b-2 border-gray-300 px-12 pb-1 inline-block">{user.Nama}</h2>
-                 <div className="absolute left-full top-1/2 -translate-y-1/2 ml-6 flex flex-col items-center bg-white p-1 rounded-sm shadow-sm">
-                   <QRCodeCanvas value={validationUrl} size={64} level="M" fgColor="#000000" />
-                   <p className="text-[7px] mt-1 text-black font-bold whitespace-nowrap">{certificate.CertNumber}</p>
-                 </div>
-              </div>
-              
-              <p className="text-xs text-center text-gray-800 max-w-lg mb-4 mt-2 leading-relaxed font-medium">
-                Berdasarkan hasil pemeriksaan Medical Check Up yang telah dilakukan<br/>
-                di Puskesmas Kalitengah, yang bersangkutan dinyatakan:
-              </p>
-              
-              <div className="bg-[#1a5b57] text-white px-12 py-1.5 rounded-sm shadow-md mb-4 flex items-center gap-3">
-                <span className="text-green-300">🌿</span>
-                <h4 className="text-2xl font-bold uppercase tracking-wider">{healthStatus}</h4>
-                <span className="text-green-300">🌿</span>
-              </div>
-              
-              <p className="text-xs text-gray-800 font-bold mb-4">
-                Tanggal Pemeriksaan : <span className="border-b border-gray-400 pb-0.5 px-4">{event.TanggalPelaksanaan || event.TanggalMulai}</span>
-              </p>
-              
-              <div className="flex justify-between w-full px-16 mt-auto pb-6">
-                <div className="text-center w-56">
-                  <p className="text-xs text-[#1a5b57] mb-12 font-bold">Dokter Pemeriksa</p>
-                  {event.TTD1_Nama ? (
-                    <div className="border-b border-gray-900 pb-1 mb-1">
-                      <p className="font-bold text-sm text-gray-900">{event.TTD1_Nama}</p>
-                    </div>
-                  ) : (
-                    <div className="border-b border-gray-900 pb-1 mb-1 h-5"></div>
-                  )}
-                  {event.TTD1_NIP && <p className="text-[10px] text-gray-800 font-medium">{event.TTD1_NIP}</p>}
+            {event.TemplateURL ? (
+              <div className="absolute inset-0 z-10">
+                {/* Name */}
+                <div className="absolute top-[255px] left-1/2 -translate-x-1/2 w-[500px] text-center flex justify-center items-center">
+                  <h2 className="text-[42px] font-bold text-black" style={{ fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive' }}>{user.Nama}</h2>
+                  
+                  {/* QR Code placed beside the name */}
+                  <div className="absolute left-[100%] ml-2 flex flex-col items-center bg-white p-1 rounded-sm shadow-sm">
+                    <QRCodeCanvas value={validationUrl} size={48} level="M" fgColor="#000000" />
+                    <p className="text-[6px] mt-0.5 text-black font-bold whitespace-nowrap">{certificate.CertNumber}</p>
+                  </div>
                 </div>
 
-                <div className="flex flex-col items-center justify-end px-4">
-                   {/* Empty space, QR code moved to beside the name */}
+                {/* Health Status */}
+                <div className="absolute top-[362px] left-1/2 -translate-x-1/2 w-[400px] text-center flex justify-center">
+                  <h4 className="text-[22px] font-bold text-white uppercase tracking-widest mt-0.5">
+                    {healthStatus === 'Laik' ? 'SEHAT / LAIK SEHAT' : healthStatus}
+                  </h4>
                 </div>
 
-                <div className="text-center w-56">
-                  <p className="text-xs text-[#1a5b57] mb-12 font-bold">Mengetahui,<br/>Kepala Puskesmas Kalitengah</p>
-                  {event.TTD2_Nama ? (
-                    <div className="border-b border-gray-900 pb-1 mb-1">
-                      <p className="font-bold text-sm text-gray-900">{event.TTD2_Nama}</p>
-                    </div>
-                  ) : (
-                    <div className="border-b border-gray-900 pb-1 mb-1 h-5"></div>
-                  )}
-                  {event.TTD2_NIP && <p className="text-[10px] text-gray-800 font-medium">{event.TTD2_NIP}</p>}
+                {/* Date */}
+                <div className="absolute top-[402px] left-[450px]">
+                  <p className="text-[14px] text-black font-bold">{formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}</p>
+                </div>
+
+                {/* Signatures */}
+                <div className="absolute bottom-[40px] w-full px-20 flex justify-between">
+                  <div className="text-center w-56 flex flex-col items-center pl-8">
+                    {event.TTD1_Nama && (
+                      <div className="w-max px-2">
+                        <p className="font-bold text-[12px] text-black">{event.TTD1_Nama}</p>
+                      </div>
+                    )}
+                    {event.TTD1_NIP && <p className="text-[10px] text-black font-medium">{event.TTD1_NIP}</p>}
+                  </div>
+
+                  <div className="text-center w-64 flex flex-col items-center pr-4">
+                    {event.TTD2_Nama && (
+                      <div className="w-max px-2">
+                        <p className="font-bold text-[12px] text-black">{event.TTD2_Nama}</p>
+                      </div>
+                    )}
+                    {event.TTD2_NIP && <p className="text-[10px] text-black font-medium">{event.TTD2_NIP}</p>}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="z-10 w-full h-full flex flex-col items-center relative p-6">
+                <h1 className="text-5xl font-serif font-bold text-[#1a5b57] mb-2 uppercase tracking-widest mt-12">SERTIFIKAT</h1>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-16 h-px bg-[#1a5b57]"></div>
+                  <h2 className="text-lg font-bold text-[#1a5b57] uppercase tracking-wider">{event.Judul}</h2>
+                  <div className="w-16 h-px bg-[#1a5b57]"></div>
+                </div>
+                
+                {event.Tema && (
+                  <div className="bg-[#1a5b57] text-white px-10 py-1.5 mb-6 shadow-md rounded-sm flex items-center gap-2">
+                    <span className="text-green-300">🌿</span>
+                    <h3 className="text-xl font-bold tracking-wider">{event.Tema}</h3>
+                    <span className="text-green-300">🌿</span>
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-3 mb-2 mt-2">
+                  <span className="text-[#1a5b57] font-bold text-lg">➔</span>
+                  <p className="text-[#1a5b57] font-bold text-sm tracking-widest uppercase">Diberikan Kepada</p>
+                  <span className="text-[#1a5b57] font-bold text-lg">⬅</span>
+                </div>
+                
+                <div className="relative inline-block mb-2 mt-1">
+                   <h2 className="text-3xl font-bold text-black font-serif px-12 pb-1 inline-block border-b-2 border-gray-300">{user.Nama}</h2>
+                   <div className="absolute left-full top-1/2 -translate-y-1/2 ml-6 flex flex-col items-center bg-white p-1 rounded-sm shadow-sm">
+                     <QRCodeCanvas value={validationUrl} size={64} level="M" fgColor="#000000" />
+                     <p className="text-[7px] mt-1 text-black font-bold whitespace-nowrap">{certificate.CertNumber}</p>
+                   </div>
+                </div>
+                
+                <p className="text-xs text-center text-gray-800 max-w-lg mb-4 mt-2 leading-relaxed font-medium">
+                  Berdasarkan hasil pemeriksaan Medical Check Up yang telah dilakukan<br/>
+                  di Puskesmas Kalitengah, yang bersangkutan dinyatakan:
+                </p>
+                
+                <div className="bg-[#1a5b57] text-white px-12 py-1.5 rounded-sm shadow-md flex items-center gap-3 mb-4">
+                  <span className="text-green-300">🌿</span>
+                  <h4 className="text-2xl font-bold uppercase tracking-wider">{healthStatus === 'Laik' ? 'SEHAT / LAIK SEHAT' : healthStatus}</h4>
+                  <span className="text-green-300">🌿</span>
+                </div>
+                
+                <p className="text-xs text-gray-800 font-bold mb-4">
+                  Tanggal Pemeriksaan : <span className="border-b border-gray-400 pb-0.5 px-4">{formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}</span>
+                </p>
+                
+                <div className="flex justify-between w-full px-16 mt-auto pb-6">
+                  <div className="text-center w-56 flex flex-col items-center">
+                    <p className="text-xs text-[#1a5b57] mb-12 font-bold">Dokter Pemeriksa</p>
+                    {event.TTD1_Nama ? (
+                      <div className="border-b border-gray-900 pb-0.5 mb-0.5 w-max px-4">
+                        <p className="font-bold text-xs text-gray-900">{event.TTD1_Nama}</p>
+                      </div>
+                    ) : (
+                      <div className="border-b border-gray-900 pb-0.5 mb-0.5 h-4 w-32"></div>
+                    )}
+                    {event.TTD1_NIP && <p className="text-[10px] text-gray-900 font-medium">{event.TTD1_NIP}</p>}
+                  </div>
+
+                  <div className="text-center w-64 flex flex-col items-center">
+                    <p className="text-xs text-[#1a5b57] mb-12 font-bold">Mengetahui,<br/>Kepala Puskesmas Kalitengah</p>
+                    {event.TTD2_Nama ? (
+                      <div className="border-b border-gray-900 pb-0.5 mb-0.5 w-max px-4">
+                        <p className="font-bold text-xs text-gray-900">{event.TTD2_Nama}</p>
+                      </div>
+                    ) : (
+                      <div className="border-b border-gray-900 pb-0.5 mb-0.5 h-4 w-40"></div>
+                    )}
+                    {event.TTD2_NIP && <p className="text-[10px] text-gray-900 font-medium">{event.TTD2_NIP}</p>}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           
           {/* Certificate Page 2: Health Details */}
           {healthDetails && (
-            <div ref={certPage2Ref} className="w-[800px] h-[565px] bg-white relative flex flex-col items-center justify-center p-12 text-center border-[10px] border-double border-blue-900 shrink-0" style={{
-              backgroundImage: event.TemplateURL ? `url(${event.TemplateURL})` : 'none',
-              backgroundSize: 'cover'
+            <div ref={certPage2Ref} className="w-[800px] h-[565px] bg-white relative flex flex-col items-center justify-center p-12 text-center shrink-0 border-[10px] border-double border-blue-900" style={{
+              backgroundImage: 'none',
+              backgroundSize: 'cover',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center'
             }}>
-              {!event.TemplateURL && (
-                <div className="absolute inset-0 bg-blue-50 opacity-50 z-0"></div>
-              )}
+              <div className="absolute inset-0 bg-blue-50 opacity-50 z-0"></div>
               <div className="z-10 bg-white/90 p-8 w-[85%] h-full flex flex-col relative rounded-md shadow-sm border border-gray-100">
                 <h2 className="text-2xl font-serif font-bold text-[#1a5b57] mb-6 uppercase tracking-widest text-center border-b border-gray-300 pb-4">
                   Hasil Pemeriksaan Kesehatan
