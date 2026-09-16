@@ -398,7 +398,7 @@ export default function EventDetail() {
             
             {/* Background Template Image */}
             {backgroundImageUrl && (
-              <img src={base64Template || (backgroundImageUrl.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(backgroundImageUrl)}` : backgroundImageUrl)} crossOrigin="anonymous" alt="Template" className="absolute inset-0 w-full h-full object-cover z-0" />
+              <img src={base64Template || (backgroundImageUrl.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(backgroundImageUrl)}` : backgroundImageUrl)} crossOrigin="anonymous" alt="Template" className="absolute inset-0 w-full h-full object-fill z-0" />
             )}
 
             {/* Fallback styling if no template image */}

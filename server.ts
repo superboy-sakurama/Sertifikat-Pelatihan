@@ -10,7 +10,6 @@ import { GoogleAuth } from "google-auth-library";
 
 dotenv.config();
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function startServer() {
   const app = express();
@@ -153,7 +152,7 @@ async function startServer() {
 
       // 3. Append headers to all sheets (and default admin to Users)
       for (const [sheetName, headers] of Object.entries(requiredSheets)) {
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}:append?valueInputOption=USER_ENTERED`;
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}!A1:D:append?valueInputOption=USER_ENTERED`;
         
         let valuesToAppend = [headers];
         
@@ -329,7 +328,7 @@ async function startServer() {
          return res.json({ message: "Mock write success", mock: true, data: values });
       }
 
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}:append?valueInputOption=USER_ENTERED`;
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}!A1:D:append?valueInputOption=USER_ENTERED`;
       const response = await fetch(url, {
         method: "POST",
         headers: {
