@@ -65,6 +65,7 @@ export default function AdminDashboard() {
     TanggalMulai: '',
     TanggalSelesai: '',
     TanggalPelaksanaan: '',
+    BatasPendaftaran: '',
     TemplateURL: '',
     TTD1_Nama: '',
     TTD2_Nama: '',
@@ -145,7 +146,8 @@ export default function AdminDashboard() {
         newEvent.TTD_LayoutConfig,
         newEvent.TTD1_NIP || '',
         newEvent.TTD2_NIP || '',
-        `=IF(ISBLANK(INDIRECT("G"&ROW())), "", IMAGE(INDIRECT("G"&ROW())))` // Column M (TemplateImage)
+        `=IF(ISBLANK(INDIRECT("G"&ROW())), "", IMAGE(INDIRECT("G"&ROW())))`, // Column M (TemplateImage)
+        newEvent.BatasPendaftaran || ''
       ];
       
       if (isEditing) {
@@ -173,6 +175,7 @@ export default function AdminDashboard() {
       TanggalMulai: ev.TanggalMulai || '',
       TanggalSelesai: ev.TanggalSelesai || '',
       TanggalPelaksanaan: ev.TanggalPelaksanaan || '',
+      BatasPendaftaran: ev.BatasPendaftaran || '',
       TemplateURL: ev.TemplateURL || '',
       TTD1_Nama: ev.TTD1_Nama || '',
       TTD2_Nama: ev.TTD2_Nama || '',
