@@ -53,7 +53,20 @@ export default function UserDashboard() {
     if (!deadlineStr) return false; // If no deadline set, it's open
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const deadline = new Date(deadlineStr);
+    
+    let deadline: Date;
+    if (deadlineStr.includes('/')) {
+      const parts = deadlineStr.split('/');
+      // Assume DD/MM/YYYY
+      if (parts.length === 3) {
+        deadline = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+      } else {
+        deadline = new Date(deadlineStr);
+      }
+    } else {
+      deadline = new Date(deadlineStr);
+    }
+    
     deadline.setHours(0, 0, 0, 0);
     return today > deadline;
   };
