@@ -14,6 +14,7 @@ export default function EventDetail() {
   const [actionLoading, setActionLoading] = useState(false);
   const [base64Template, setBase64Template] = useState<string | null>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewPageTab, setPreviewPageTab] = useState<'page1' | 'page2'>('page1');
   const certRef = useRef<HTMLDivElement>(null);
   const certPage2Ref = useRef<HTMLDivElement>(null);
 
@@ -256,6 +257,56 @@ export default function EventDetail() {
   const hasPostTest = testData?.PostTestScore !== undefined && testData?.PostTestScore !== '';
   const isPostTestPass = testData?.IsCompleted === 'TRUE';
 
+  // Back page / Assessment Criteria evaluation
+  const hasPage2 = certConfig.showHalaman2 || !!healthDetails;
+
+  const assessmentCriteriaList: { no: number; nama: string; hasil: string }[] = (() => {
+    if (certConfig.kriteriaPenilaian && certConfig.kriteriaPenilaian.length > 0) {
+      return certConfig.kriteriaPenilaian.map((item, idx) => {
+        let dynamicResult = item.hasil;
+        if (healthDetails) {
+          const lower = (item.nama || '').toLowerCase();
+          if (lower.includes('tekanan darah') && healthDetails.TekananDarah) {
+            dynamicResult = `${healthDetails.TekananDarah} ${item.hasil ? `(${item.hasil})` : ''}`.trim();
+          } else if (lower.includes('gula darah') && healthDetails.GDA) {
+            dynamicResult = `${healthDetails.GDA} mg/dL`;
+          } else if (lower.includes('tb') && healthDetails.SkriningTB) {
+            dynamicResult = healthDetails.SkriningTB;
+          } else if (lower.includes('hbsag') && healthDetails.HBsAg) {
+            dynamicResult = healthDetails.HBsAg;
+          } else if (lower.includes('berat') && healthDetails.BB) {
+            dynamicResult = `${healthDetails.BB} kg`;
+          } else if (lower.includes('tinggi') && healthDetails.TB) {
+            dynamicResult = `${healthDetails.TB} cm`;
+          }
+        }
+        return {
+          no: idx + 1,
+          nama: item.nama || `Kriteria ${idx + 1}`,
+          hasil: dynamicResult || 'Sesuai Standar'
+        };
+      });
+    }
+
+    if (healthDetails) {
+      return [
+        { no: 1, nama: 'Berat Badan (BB)', hasil: healthDetails.BB ? `${healthDetails.BB} kg` : '-' },
+        { no: 2, nama: 'Tinggi Badan (TB)', hasil: healthDetails.TB ? `${healthDetails.TB} cm` : '-' },
+        { no: 3, nama: 'Tekanan Darah', hasil: healthDetails.TekananDarah || '-' },
+        { no: 4, nama: 'Gula Darah Acak (GDA)', hasil: healthDetails.GDA ? `${healthDetails.GDA} mg/dL` : '-' },
+        { no: 5, nama: 'Skrining TB Paru', hasil: healthDetails.SkriningTB || '-' },
+        { no: 6, nama: 'Pemeriksaan HBsAg', hasil: healthDetails.HBsAg || '-' },
+        { no: 7, nama: 'Status Penilaian Kesehatan', hasil: healthDetails.Status || 'Laik' }
+      ];
+    }
+
+    return [
+      { no: 1, nama: 'Tingkat Kehadiran & Partisipasi', hasil: 'Hadir 100%' },
+      { no: 2, nama: 'Evaluasi Pemahaman Materi (Post-Test)', hasil: testData?.PostTestScore ? `${testData.PostTestScore} / 100 (Lulus)` : 'Lulus' },
+      { no: 3, nama: 'Hasil Penilaian Akhir', hasil: 'Kompeten / Selesai' }
+    ];
+  })();
+
   const validationUrl = `${window.location.origin}/validate/${certificate?.CertID || ''}`;
 
   const formatDateIndonesian = (dateString: string) => {
@@ -427,133 +478,210 @@ export default function EventDetail() {
       {showPreviewModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[95vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+            <div className="p-4 border-b flex justify-between items-center bg-gray-50 flex-wrap gap-2">
               <div>
                 <h3 className="font-bold text-gray-900 text-lg">Pratinjau Sertifikat (Format A4 Landscape)</h3>
                 <p className="text-xs text-gray-500">Sertifikat akan diunduh dalam dimensi presisi standar A4 (297 × 210 mm) tanpa terpotong.</p>
               </div>
-              <button 
-                onClick={() => setShowPreviewModal(false)}
-                className="p-1.5 text-gray-500 hover:text-gray-800 rounded-lg hover:bg-gray-200 transition"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-3">
+                {hasPage2 && (
+                  <div className="flex bg-gray-200 p-0.5 rounded-lg text-xs font-semibold">
+                    <button 
+                      type="button"
+                      onClick={() => setPreviewPageTab('page1')}
+                      className={`px-3 py-1.5 rounded-md transition ${previewPageTab === 'page1' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                    >
+                      Halaman 1 (Depan)
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setPreviewPageTab('page2')}
+                      className={`px-3 py-1.5 rounded-md transition ${previewPageTab === 'page2' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                    >
+                      Halaman 2 (Kriteria Penilaian)
+                    </button>
+                  </div>
+                )}
+                <button 
+                  onClick={() => setShowPreviewModal(false)}
+                  className="p-1.5 text-gray-500 hover:text-gray-800 rounded-lg hover:bg-gray-200 transition"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-auto p-4 md:p-6 bg-gray-100 flex flex-col items-center">
-              {/* Scaled Preview Frame maintaining 1123:794 (A4) aspect ratio */}
-              <div className="w-full max-w-3xl bg-white shadow-lg rounded-sm overflow-hidden border border-gray-300 relative aspect-[1123/794]">
-                {backgroundImageUrl ? (
-                  <img 
-                    src={backgroundImageUrl} 
-                    alt="Certificate Template" 
-                    className={`absolute inset-0 w-full h-full ${
-                      certConfig.bgFit === 'contain' ? 'object-contain' : 
-                      certConfig.bgFit === 'cover' ? 'object-cover' : 'object-fill'
-                    }`}
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-blue-50/50"></div>
-                )}
-
-                {/* Overlaid preview elements proportional */}
-                <div className="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between">
-                  {certConfig.showJudul && event.Judul && (
-                    <div 
-                      className={`absolute w-full px-8 ${
-                        certConfig.judulAlign === 'left' ? 'text-left pl-12' : 
-                        certConfig.judulAlign === 'right' ? 'text-right pr-12' : 'text-center'
+              {previewPageTab === 'page1' ? (
+                /* Scaled Preview Frame maintaining 1123:794 (A4) aspect ratio - PAGE 1 */
+                <div className="w-full max-w-3xl bg-white shadow-lg rounded-sm overflow-hidden border border-gray-300 relative aspect-[1123/794]">
+                  {backgroundImageUrl ? (
+                    <img 
+                      src={backgroundImageUrl} 
+                      alt="Certificate Template" 
+                      className={`absolute inset-0 w-full h-full ${
+                        certConfig.bgFit === 'contain' ? 'object-contain' : 
+                        certConfig.bgFit === 'cover' ? 'object-cover' : 'object-fill'
                       }`}
-                      style={{ top: `${(certConfig.judulTop / 794) * 100}%` }}
-                    >
-                      <h2 className="text-xs sm:text-sm md:text-base font-serif font-bold text-gray-900 uppercase">
-                        {event.Judul}
-                      </h2>
-                    </div>
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-blue-50/50"></div>
                   )}
 
-                  {certConfig.showTema && event.Tema && (
+                  {/* Overlaid preview elements proportional */}
+                  <div className="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between">
+                    {certConfig.showJudul && event.Judul && (
+                      <div 
+                        className={`absolute w-full px-8 ${
+                          certConfig.judulAlign === 'left' ? 'text-left pl-12' : 
+                          certConfig.judulAlign === 'right' ? 'text-right pr-12' : 'text-center'
+                        }`}
+                        style={{ top: `${(certConfig.judulTop / 794) * 100}%` }}
+                      >
+                        <h2 className="text-xs sm:text-sm md:text-base font-serif font-bold text-gray-900 uppercase">
+                          {event.Judul}
+                        </h2>
+                      </div>
+                    )}
+
+                    {certConfig.showTema && event.Tema && (
+                      <div 
+                        className={`absolute w-full px-8 ${
+                          certConfig.temaAlign === 'left' ? 'text-left pl-12' : 
+                          certConfig.temaAlign === 'right' ? 'text-right pr-12' : 'text-center'
+                        }`}
+                        style={{ top: `${(certConfig.temaTop / 794) * 100}%` }}
+                      >
+                        <p className="text-[10px] sm:text-xs text-gray-800 italic">
+                          "{event.Tema}"
+                        </p>
+                      </div>
+                    )}
+
                     <div 
-                      className={`absolute w-full px-8 ${
-                        certConfig.temaAlign === 'left' ? 'text-left pl-12' : 
-                        certConfig.temaAlign === 'right' ? 'text-right pr-12' : 'text-center'
-                      }`}
-                      style={{ top: `${(certConfig.temaTop / 794) * 100}%` }}
+                      className="absolute w-full text-center"
+                      style={{ top: `${(365 / 794) * 100}%` }}
                     >
-                      <p className="text-[10px] sm:text-xs text-gray-800 italic">
-                        "{event.Tema}"
+                      <h1 
+                        className="text-lg sm:text-2xl md:text-3xl font-bold text-black"
+                        style={{ fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive' }}
+                      >
+                        {user.Nama}
+                      </h1>
+                    </div>
+
+                    <div 
+                      className="absolute right-8 flex flex-col items-center bg-white p-1 rounded shadow-sm border"
+                      style={{ top: `${(425 / 794) * 100}%` }}
+                    >
+                      <QRCodeCanvas value={validationUrl} size={36} level="M" fgColor="#000000" />
+                      <span className="text-[6px] font-bold text-black">{certificate?.CertNumber || 'CERT-PREVIEW'}</span>
+                    </div>
+
+                    {certConfig.showTanggal && (
+                      <div 
+                        className={`absolute w-full px-8 ${
+                          certConfig.tanggalAlign === 'left' ? 'text-left pl-12' : 
+                          certConfig.tanggalAlign === 'right' ? 'text-right pr-12' : 'text-center'
+                        }`}
+                        style={{ top: `${(certConfig.tanggalTop / 794) * 100}%` }}
+                      >
+                        <span className="text-[9px] sm:text-[11px] font-semibold text-gray-900">
+                          {formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}
+                        </span>
+                      </div>
+                    )}
+
+                    {certConfig.showTTD && (
+                      <div 
+                        className={`absolute w-full px-12 flex ${
+                          certConfig.layout === 'Tengah' ? 'justify-center' :
+                          certConfig.layout === 'Kanan' ? 'justify-end' :
+                          certConfig.layout === 'Kiri' ? 'justify-start' :
+                          'justify-between'
+                        }`}
+                        style={{ bottom: `${(certConfig.ttdBottom / 794) * 100}%` }}
+                      >
+                        {(certConfig.layout === 'Kiri' || certConfig.layout === 'Kiri-Kanan') && (
+                          <div className="text-center text-[8px] sm:text-[10px]">
+                            <p className="font-bold text-gray-900 border-b border-black pb-0.5">{event.TTD1_Nama || 'Penandatangan 1'}</p>
+                            {event.TTD1_NIP && <p className="text-gray-700">{event.TTD1_NIP}</p>}
+                          </div>
+                        )}
+
+                        {certConfig.layout === 'Tengah' && (
+                          <div className="text-center text-[8px] sm:text-[10px]">
+                            <p className="font-bold text-gray-900 border-b border-black pb-0.5">{event.TTD1_Nama || event.TTD2_Nama || 'Penandatangan'}</p>
+                            {(event.TTD1_NIP || event.TTD2_NIP) && <p className="text-gray-700">{event.TTD1_NIP || event.TTD2_NIP}</p>}
+                          </div>
+                        )}
+
+                        {(certConfig.layout === 'Kanan' || certConfig.layout === 'Kiri-Kanan') && (
+                          <div className="text-center text-[8px] sm:text-[10px]">
+                            <p className="font-bold text-gray-900 border-b border-black pb-0.5">{event.TTD2_Nama || 'Penandatangan 2'}</p>
+                            {event.TTD2_NIP && <p className="text-gray-700">{event.TTD2_NIP}</p>}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* Scaled Preview Frame maintaining 1123:794 (A4) aspect ratio - PAGE 2 */
+                <div className="w-full max-w-3xl bg-white shadow-lg rounded-sm overflow-hidden border-4 border-double border-blue-900 relative aspect-[1123/794] flex flex-col items-center justify-center p-3 sm:p-5 text-center">
+                  <div className="w-full h-full flex flex-col items-center justify-between bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-xs">
+                    <div className="w-full text-center">
+                      <h3 className="text-xs sm:text-sm font-serif font-bold text-blue-950 uppercase tracking-wide border-b border-blue-900 pb-1">
+                        {certConfig.judulHalaman2 || 'HASIL PEMERIKSAAN KESEHATAN / KRITERIA PENILAIAN'}
+                      </h3>
+                      <p className="text-[8px] sm:text-[9px] text-gray-500 mt-0.5">
+                        Lampiran Resmi Kegiatan: <strong>{event.Judul}</strong>
                       </p>
                     </div>
-                  )}
 
-                  <div 
-                    className="absolute w-full text-center"
-                    style={{ top: `${(365 / 794) * 100}%` }}
-                  >
-                    <h1 
-                      className="text-lg sm:text-2xl md:text-3xl font-bold text-black"
-                      style={{ fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive' }}
-                    >
-                      {user.Nama}
-                    </h1>
-                  </div>
-
-                  <div 
-                    className="absolute right-8 flex flex-col items-center bg-white p-1 rounded shadow-sm border"
-                    style={{ top: `${(425 / 794) * 100}%` }}
-                  >
-                    <QRCodeCanvas value={validationUrl} size={36} level="M" fgColor="#000000" />
-                    <span className="text-[6px] font-bold text-black">{certificate?.CertNumber || 'CERT-PREVIEW'}</span>
-                  </div>
-
-                  {certConfig.showTanggal && (
-                    <div 
-                      className={`absolute w-full px-8 ${
-                        certConfig.tanggalAlign === 'left' ? 'text-left pl-12' : 
-                        certConfig.tanggalAlign === 'right' ? 'text-right pr-12' : 'text-center'
-                      }`}
-                      style={{ top: `${(certConfig.tanggalTop / 794) * 100}%` }}
-                    >
-                      <span className="text-[9px] sm:text-[11px] font-semibold text-gray-900">
-                        {formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}
-                      </span>
+                    <div className="w-full bg-blue-50/80 border border-blue-100 rounded py-1 px-3 flex justify-between items-center text-[8px] sm:text-[9px]">
+                      <div><span className="text-gray-500">Nama:</span> <strong className="text-blue-950">{user.Nama}</strong></div>
+                      <div><span className="text-gray-500">No. Sertifikat:</span> <strong className="text-gray-800">{certificate?.CertNumber || `CERT-${reg?.RegID || 'PREVIEW'}`}</strong></div>
+                      <div><span className="text-gray-500">Tanggal:</span> <strong className="text-gray-800">{formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}</strong></div>
                     </div>
-                  )}
 
-                  {certConfig.showTTD && (
-                    <div 
-                      className={`absolute w-full px-12 flex ${
-                        certConfig.layout === 'Tengah' ? 'justify-center' :
-                        certConfig.layout === 'Kanan' ? 'justify-end' :
-                        certConfig.layout === 'Kiri' ? 'justify-start' :
-                        'justify-between'
-                      }`}
-                      style={{ bottom: `${(certConfig.ttdBottom / 794) * 100}%` }}
-                    >
-                      {(certConfig.layout === 'Kiri' || certConfig.layout === 'Kiri-Kanan') && (
-                        <div className="text-center text-[8px] sm:text-[10px]">
-                          <p className="font-bold text-gray-900 border-b border-black pb-0.5">{event.TTD1_Nama || 'Penandatangan 1'}</p>
-                          {event.TTD1_NIP && <p className="text-gray-700">{event.TTD1_NIP}</p>}
-                        </div>
-                      )}
+                    <div className="w-full border border-gray-200 rounded overflow-hidden my-auto max-h-[52%] overflow-y-auto">
+                      <table className="w-full text-left text-[8px] sm:text-[9px]">
+                        <thead className="bg-blue-900 text-white font-semibold sticky top-0">
+                          <tr>
+                            <th className="py-1 px-2 text-center w-8">NO</th>
+                            <th className="py-1 px-3">KRITERIA PENILAIAN / PARAMETER</th>
+                            <th className="py-1 px-3 text-center w-36">HASIL / KETERANGAN</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white">
+                          {assessmentCriteriaList.map((item, idx) => (
+                            <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                              <td className="py-1 px-2 text-center text-gray-500 font-bold">{item.no}</td>
+                              <td className="py-1 px-3 font-medium text-gray-800">{item.nama}</td>
+                              <td className="py-1 px-3 text-center font-semibold text-emerald-700">
+                                <span className="inline-block px-1.5 py-0.5 bg-emerald-50 text-emerald-800 rounded border border-emerald-200 text-[8px]">
+                                  {item.hasil}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
 
-                      {certConfig.layout === 'Tengah' && (
-                        <div className="text-center text-[8px] sm:text-[10px]">
-                          <p className="font-bold text-gray-900 border-b border-black pb-0.5">{event.TTD1_Nama || event.TTD2_Nama || 'Penandatangan'}</p>
-                          {(event.TTD1_NIP || event.TTD2_NIP) && <p className="text-gray-700">{event.TTD1_NIP || event.TTD2_NIP}</p>}
-                        </div>
-                      )}
-
-                      {(certConfig.layout === 'Kanan' || certConfig.layout === 'Kiri-Kanan') && (
-                        <div className="text-center text-[8px] sm:text-[10px]">
-                          <p className="font-bold text-gray-900 border-b border-black pb-0.5">{event.TTD2_Nama || 'Penandatangan 2'}</p>
-                          {event.TTD2_NIP && <p className="text-gray-700">{event.TTD2_NIP}</p>}
+                    <div className="w-full border-t pt-1 flex justify-between items-end text-[7px] sm:text-[8px] text-gray-500">
+                      <span>Dokumen Elektronik Resmi • Lampiran Sah</span>
+                      {certConfig.showTTD && (
+                        <div className="text-right">
+                          <p className="font-bold text-gray-800">{event.TTD1_Nama || event.TTD2_Nama || 'Pemeriksa'}</p>
+                          <p>{event.TTD1_NIP || event.TTD2_NIP || ''}</p>
                         </div>
                       )}
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="p-4 border-t bg-gray-50 flex justify-end items-center gap-3">
@@ -571,7 +699,7 @@ export default function EventDetail() {
                 disabled={actionLoading}
                 className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition shadow-sm"
               >
-                <Download size={16} /> Unduh Sekarang (A4)
+                <Download size={16} /> Unduh Sekarang (A4{hasPage2 ? ' • 2 Halaman' : ''})
               </button>
             </div>
           </div>
@@ -833,60 +961,104 @@ export default function EventDetail() {
             )}
           </div>
           
-          {/* Certificate Page 2: Health Details */}
-          {healthDetails && (
-            <div ref={certPage2Ref} className="w-[1122px] h-[794px] bg-white relative flex flex-col items-center justify-center p-12 text-center shrink-0 border-[10px] border-double border-blue-900" style={{
-              backgroundImage: 'none',
-              backgroundSize: 'cover',
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'center'
-            }}>
-              <div className="absolute inset-0 bg-blue-50 opacity-50 z-0"></div>
-              <div className="z-10 bg-white/90 p-8 w-[85%] h-full flex flex-col relative rounded-md shadow-sm border border-gray-100">
-                <h2 className="text-4xl font-serif font-bold text-[#1a5b57] mb-6 uppercase tracking-widest text-center border-b border-gray-300 pb-4">
-                  Hasil Pemeriksaan Kesehatan
-                </h2>
-                
-                <div className="flex-1 space-y-8 text-left text-lg">
-                  <div>
-                    <h3 className="font-bold text-[#1a5b57] mb-4 text-2xl bg-[#e8f1f0] px-4 py-2 rounded">Pemeriksaan Dasar</h3>
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-3 px-4">
-                      <div className="flex justify-between border-b border-gray-100 pb-1">
-                        <span className="text-gray-600 text-xl">Berat Badan (BB)</span>
-                        <span className="font-semibold text-gray-800 text-xl">{healthDetails.BB || '-'}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-gray-100 pb-1">
-                        <span className="text-gray-600 text-xl">Tinggi Badan (TB)</span>
-                        <span className="font-semibold text-gray-800 text-xl">{healthDetails.TB || '-'}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-gray-100 pb-1">
-                        <span className="text-gray-600 text-xl">Tekanan Darah</span>
-                        <span className="font-semibold text-gray-800 text-xl">{healthDetails.TekananDarah || '-'}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-gray-100 pb-1">
-                        <span className="text-gray-600 text-xl">Gula Darah Acak (GDA)</span>
-                        <span className="font-semibold text-gray-800 text-xl">{healthDetails.GDA || '-'}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-gray-100 pb-1 col-span-2">
-                        <span className="text-gray-600 text-xl">Skrining TB</span>
-                        <span className="font-semibold text-gray-800 text-xl">{healthDetails.SkriningTB || '-'}</span>
-                      </div>
-                    </div>
-                  </div>
+          {/* Certificate Page 2: Assessment Criteria / Hasil Penilaian */}
+          {hasPage2 && (
+            <div 
+              ref={certPage2Ref} 
+              style={{ width: '1123px', height: '794px' }} 
+              className="bg-white relative flex flex-col items-center justify-center p-10 text-center shrink-0 border-[10px] border-double border-blue-900 overflow-hidden"
+            >
+              {/* Subtle background tint */}
+              <div className="absolute inset-0 bg-slate-50/50 pointer-events-none"></div>
 
+              {/* Centered Certificate Body */}
+              <div className="z-10 bg-white p-8 w-[92%] max-h-[92%] flex flex-col items-center justify-center relative rounded-xl shadow-sm border border-gray-300">
+                <h2 className="text-3xl font-serif font-bold text-blue-950 uppercase tracking-widest text-center border-b-2 border-blue-900 pb-2.5 w-full">
+                  {certConfig.judulHalaman2 || 'HASIL PEMERIKSAAN KESEHATAN / KRITERIA PENILAIAN'}
+                </h2>
+                <p className="text-xs text-gray-500 font-medium mt-1 mb-4">
+                  Lampiran Resmi Sertifikat Kegiatan: <strong className="text-gray-800">{event.Judul}</strong>
+                </p>
+
+                {/* Participant Information Bar - Centered */}
+                <div className="w-full bg-blue-50/80 border border-blue-200 rounded-lg py-2.5 px-6 mb-4 flex justify-between items-center text-xs">
                   <div>
-                    <h3 className="font-bold text-[#1a5b57] mb-4 text-2xl bg-[#e8f1f0] px-4 py-2 rounded">Pemeriksaan Penyakit Menular</h3>
-                    <div className="px-4">
-                      <div className="flex justify-between border-b border-gray-100 pb-1 max-w-sm">
-                        <span className="text-gray-600 text-xl">HBsAg</span>
-                        <span className="font-semibold text-gray-800 text-xl">{healthDetails.HBsAg || '-'}</span>
-                      </div>
-                    </div>
+                    <span className="text-gray-500">Nama Peserta:</span>{' '}
+                    <strong className="text-blue-950 font-bold text-sm">{user.Nama}</strong>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">No. Sertifikat:</span>{' '}
+                    <strong className="text-gray-800 font-mono font-bold">{certificate?.CertNumber || `CERT-${reg?.RegID || 'PREVIEW'}`}</strong>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Tanggal:</span>{' '}
+                    <strong className="text-gray-800 font-semibold">{formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}</strong>
                   </div>
                 </div>
 
-                <div className="mt-auto text-center text-sm text-gray-500 pt-4 border-t">
-                  Dokumen ini merupakan lampiran resmi dari Sertifikat Utama.
+                {/* Centered Criteria Table */}
+                <div className="w-full border border-gray-300 rounded-lg overflow-hidden shadow-xs mb-4">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-blue-900 text-white font-semibold">
+                        <th className="py-2.5 px-4 text-center w-14 border-r border-blue-800">NO</th>
+                        <th className="py-2.5 px-6 border-r border-blue-800">KRITERIA PENILAIAN / PARAMETER PEMERIKSAAN</th>
+                        <th className="py-2.5 px-6 text-center w-72">HASIL / KETERANGAN</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white">
+                      {assessmentCriteriaList.map((item, idx) => (
+                        <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/70'}>
+                          <td className="py-2.5 px-4 text-center font-bold text-gray-600 border-r border-gray-200">{item.no}</td>
+                          <td className="py-2.5 px-6 font-medium text-gray-900 border-r border-gray-200">{item.nama}</td>
+                          <td className="py-2.5 px-6 text-center font-bold text-emerald-800">
+                            <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md">
+                              {item.hasil}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Bottom Signatures if showTTD */}
+                {certConfig.showTTD && (
+                  <div className={`w-full px-8 pt-2 flex text-xs text-gray-800 ${
+                    certConfig.layout === 'Tengah' ? 'justify-center' :
+                    certConfig.layout === 'Kanan' ? 'justify-end' :
+                    certConfig.layout === 'Kiri' ? 'justify-start' :
+                    'justify-between'
+                  }`}>
+                    {(certConfig.layout === 'Kiri' || certConfig.layout === 'Kiri-Kanan') && (
+                      <div className="text-center w-52">
+                        <p className="text-[11px] text-gray-500 mb-8">Pemeriksa / Penanggung Jawab,</p>
+                        <p className="font-bold border-b border-gray-900 pb-0.5">{event.TTD1_Nama || 'Penanggung Jawab 1'}</p>
+                        {event.TTD1_NIP && <p className="text-[10px] text-gray-600">{event.TTD1_NIP}</p>}
+                      </div>
+                    )}
+
+                    {certConfig.layout === 'Tengah' && (
+                      <div className="text-center w-56">
+                        <p className="text-[11px] text-gray-500 mb-8">Pemeriksa / Penanggung Jawab,</p>
+                        <p className="font-bold border-b border-gray-900 pb-0.5">{event.TTD1_Nama || event.TTD2_Nama || 'Penanggung Jawab'}</p>
+                        {(event.TTD1_NIP || event.TTD2_NIP) && <p className="text-[10px] text-gray-600">{event.TTD1_NIP || event.TTD2_NIP}</p>}
+                      </div>
+                    )}
+
+                    {(certConfig.layout === 'Kanan' || certConfig.layout === 'Kiri-Kanan') && (
+                      <div className="text-center w-52">
+                        <p className="text-[11px] text-gray-500 mb-8">Mengetahui / Mengesahkan,</p>
+                        <p className="font-bold border-b border-gray-900 pb-0.5">{event.TTD2_Nama || 'Penanggung Jawab 2'}</p>
+                        {event.TTD2_NIP && <p className="text-[10px] text-gray-600">{event.TTD2_NIP}</p>}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Footer Note */}
+                <div className="mt-3 text-center text-[10px] text-gray-400 border-t border-gray-200 pt-2 w-full">
+                  Dokumen ini diterbitkan secara elektronik dan merupakan lampiran resmi yang sah dari Sertifikat Kegiatan.
                 </div>
               </div>
             </div>

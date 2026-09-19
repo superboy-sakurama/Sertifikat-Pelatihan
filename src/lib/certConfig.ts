@@ -1,3 +1,9 @@
+export interface AssessmentCriterion {
+  id: string;
+  nama: string;
+  hasil: string;
+}
+
 export interface CertificateConfig {
   layout: 'Kiri' | 'Tengah' | 'Kanan' | 'Kiri-Kanan';
   showJudul: boolean;
@@ -12,6 +18,10 @@ export interface CertificateConfig {
   tanggalTop: number;
   ttdBottom: number;
   bgFit: 'contain' | 'cover' | 'fill';
+  // Halaman 2 (Belakang)
+  showHalaman2: boolean;
+  judulHalaman2: string;
+  kriteriaPenilaian: AssessmentCriterion[];
 }
 
 export const DEFAULT_CERT_CONFIG: CertificateConfig = {
@@ -27,7 +37,10 @@ export const DEFAULT_CERT_CONFIG: CertificateConfig = {
   tanggalAlign: 'center',
   tanggalTop: 565,
   ttdBottom: 56,
-  bgFit: 'contain'
+  bgFit: 'contain',
+  showHalaman2: false,
+  judulHalaman2: 'Hasil Pemeriksaan Kesehatan / Penilaian',
+  kriteriaPenilaian: []
 };
 
 export function parseCertConfig(configStr?: string, eventTitle?: string): CertificateConfig {
@@ -41,7 +54,14 @@ export function parseCertConfig(configStr?: string, eventTitle?: string): Certif
     // If it's a legacy Medical Check Up template, its graphic already had the title/theme pre-printed
     showJudul: !isMCU,
     showTema: !isMCU,
-    tanggalAlign: isMCU ? 'right' : 'center'
+    tanggalAlign: isMCU ? 'right' : 'center',
+    showHalaman2: !!isMCU,
+    kriteriaPenilaian: isMCU ? [
+      { id: '1', nama: 'Tekanan Darah', hasil: 'Normal / Sesuai Standar' },
+      { id: '2', nama: 'Gula Darah Acak (GDA)', hasil: 'Normal (< 200 mg/dL)' },
+      { id: '3', nama: 'Skrining TB', hasil: 'Negatif / Tidak Ditemukan Gejala' },
+      { id: '4', nama: 'Pemeriksaan HBsAg', hasil: 'Non-Reaktif' },
+    ] : []
   };
 
   if (!configStr) return baseConfig;
@@ -51,7 +71,8 @@ export function parseCertConfig(configStr?: string, eventTitle?: string): Certif
       const parsed = JSON.parse(configStr);
       return {
         ...baseConfig,
-        ...parsed
+        ...parsed,
+        kriteriaPenilaian: Array.isArray(parsed.kriteriaPenilaian) ? parsed.kriteriaPenilaian : baseConfig.kriteriaPenilaian
       };
     } catch (e) {
       // ignore

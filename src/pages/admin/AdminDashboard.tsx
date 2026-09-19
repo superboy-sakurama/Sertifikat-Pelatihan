@@ -1,7 +1,7 @@
 import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { fetchSheetData, appendSheetData, updateSheetData } from '../../lib/api';
-import { Plus, Loader2, Edit, Check, Eye } from 'lucide-react';
-import { CertificateConfig, DEFAULT_CERT_CONFIG, parseCertConfig, serializeCertConfig } from '../../lib/certConfig';
+import { Plus, Loader2, Edit, Check, Eye, Trash2, Layers, FileText } from 'lucide-react';
+import { CertificateConfig, DEFAULT_CERT_CONFIG, parseCertConfig, serializeCertConfig, AssessmentCriterion } from '../../lib/certConfig';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'Events' | 'Users' | 'Registrations' | 'Tests' | 'Questions' | 'HealthAssessments'>('Events');
@@ -9,6 +9,7 @@ export default function AdminDashboard() {
   const [healthData, setHealthData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [previewTab, setPreviewTab] = useState<'page1' | 'page2'>('page1');
   
   // Custom labels for Health Assessments
   const [passLabel, setPassLabel] = useState('Laik');
@@ -688,99 +689,339 @@ export default function AdminDashboard() {
                   <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
                     <Eye size={14} className="text-blue-600" /> Pratinjau Langsung Tata Letak Sertifikat (A4 Landscape)
                   </span>
-                  <span className="text-[11px] text-gray-400">Rasio 1.414 (297 x 210 mm)</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex bg-gray-200 p-0.5 rounded text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewTab('page1')}
+                        className={`px-2.5 py-1 rounded font-medium transition ${previewTab === 'page1' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                      >
+                        Halaman 1 (Depan)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewTab('page2')}
+                        className={`px-2.5 py-1 rounded font-medium transition ${previewTab === 'page2' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                      >
+                        Halaman 2 (Belakang {certConfig.showHalaman2 ? '• Aktif' : '• Nonaktif'})
+                      </button>
+                    </div>
+                    <span className="text-[11px] text-gray-400 hidden sm:inline">297 x 210 mm</span>
+                  </div>
                 </div>
 
-                <div className="w-full max-w-2xl mx-auto aspect-[297/210] bg-white rounded border-2 border-dashed border-gray-300 relative overflow-hidden shadow-inner flex flex-col items-center">
-                  {newEvent.TemplateURL ? (
-                    <img 
-                      src={newEvent.TemplateURL} 
-                      alt="Template Preview" 
-                      className={`absolute inset-0 w-full h-full ${
-                        certConfig.bgFit === 'contain' ? 'object-contain' : 
-                        certConfig.bgFit === 'cover' ? 'object-cover' : 'object-fill'
-                      }`} 
+                {previewTab === 'page1' ? (
+                  <div className="w-full max-w-2xl mx-auto aspect-[297/210] bg-white rounded border-2 border-dashed border-gray-300 relative overflow-hidden shadow-inner flex flex-col items-center">
+                    {newEvent.TemplateURL ? (
+                      <img 
+                        src={newEvent.TemplateURL} 
+                        alt="Template Preview" 
+                        className={`absolute inset-0 w-full h-full ${
+                          certConfig.bgFit === 'contain' ? 'object-contain' : 
+                          certConfig.bgFit === 'cover' ? 'object-cover' : 'object-fill'
+                        }`} 
+                      />
+                    ) : (
+                      <div className="absolute inset-0 border-8 border-double border-blue-900 bg-blue-50/30 flex flex-col items-center justify-center p-4 text-center">
+                        <p className="text-[10px] font-serif font-bold text-blue-950 uppercase tracking-widest">SERTIFIKAT PENGHARGAAN</p>
+                      </div>
+                    )}
+
+                    {/* Elements overlay in preview scaled to container */}
+                    <div className="absolute inset-0 z-10 pointer-events-none p-2 flex flex-col justify-between">
+                      {/* Top: Judul & Tema */}
+                      <div className="w-full text-center space-y-1 mt-2">
+                        {certConfig.showJudul && (
+                          <p className={`text-[11px] font-bold text-gray-900 uppercase tracking-wide leading-tight ${
+                            certConfig.judulAlign === 'left' ? 'text-left pl-6' : 
+                            certConfig.judulAlign === 'right' ? 'text-right pr-6' : 'text-center'
+                          }`}>
+                            {newEvent.Judul || 'Judul Kegiatan'}
+                          </p>
+                        )}
+                        {certConfig.showTema && (
+                          <p className={`text-[9px] italic text-gray-700 leading-tight ${
+                            certConfig.temaAlign === 'left' ? 'text-left pl-6' : 
+                            certConfig.temaAlign === 'right' ? 'text-right pr-6' : 'text-center'
+                          }`}>
+                            "{newEvent.Tema || 'Tema Kegiatan'}"
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Middle: Participant Name Sample */}
+                      <div className="w-full text-center my-auto">
+                        <p className="text-[7px] uppercase tracking-widest text-gray-500 font-semibold mb-0.5">Diberikan Kepada</p>
+                        <h4 className="text-[15px] font-bold text-gray-900 border-b border-gray-400 inline-block px-4 pb-0.5" style={{ fontFamily: 'serif' }}>
+                          Nama Peserta Sertifikat
+                        </h4>
+                      </div>
+
+                      {/* Bottom: Date & Signatures */}
+                      <div className="w-full space-y-2">
+                        {certConfig.showTanggal && (
+                          <p className={`text-[8px] font-semibold text-gray-800 ${
+                            certConfig.tanggalAlign === 'left' ? 'text-left pl-6' : 
+                            certConfig.tanggalAlign === 'right' ? 'text-right pr-6' : 'text-center'
+                          }`}>
+                            Tanggal: {newEvent.TanggalPelaksanaan || 'Tanggal Pelaksanaan'}
+                          </p>
+                        )}
+
+                        {certConfig.showTTD && (
+                          <div className={`w-full px-6 flex text-[8px] text-gray-800 pb-1 ${
+                            certConfig.layout === 'Tengah' ? 'justify-center' :
+                            certConfig.layout === 'Kanan' ? 'justify-end' :
+                            certConfig.layout === 'Kiri' ? 'justify-start' :
+                            'justify-between'
+                          }`}>
+                            {(certConfig.layout === 'Kiri' || certConfig.layout === 'Kiri-Kanan') && (
+                              <div className="text-center w-28">
+                                <p className="font-bold border-b border-gray-700 pb-0.5">{newEvent.TTD1_Nama || 'Nama Penandatangan 1'}</p>
+                                <p className="text-[7px] text-gray-600">{newEvent.TTD1_NIP || 'NIP/SIP'}</p>
+                              </div>
+                            )}
+
+                            {certConfig.layout === 'Tengah' && (
+                              <div className="text-center w-32">
+                                <p className="font-bold border-b border-gray-700 pb-0.5">{newEvent.TTD1_Nama || newEvent.TTD2_Nama || 'Nama Penandatangan'}</p>
+                                <p className="text-[7px] text-gray-600">{newEvent.TTD1_NIP || newEvent.TTD2_NIP || 'NIP/SIP'}</p>
+                              </div>
+                            )}
+
+                            {(certConfig.layout === 'Kanan' || certConfig.layout === 'Kiri-Kanan') && (
+                              <div className="text-center w-28">
+                                <p className="font-bold border-b border-gray-700 pb-0.5">{newEvent.TTD2_Nama || 'Nama Penandatangan 2'}</p>
+                                <p className="text-[7px] text-gray-600">{newEvent.TTD2_NIP || 'NIP/SIP'}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full max-w-2xl mx-auto aspect-[297/210] bg-white rounded border-2 border-dashed border-gray-300 relative overflow-hidden shadow-inner flex flex-col items-center justify-center p-4">
+                    {!certConfig.showHalaman2 ? (
+                      <div className="text-center text-gray-400 p-4">
+                        <FileText size={32} className="mx-auto mb-2 opacity-50" />
+                        <p className="text-xs font-semibold text-gray-600">Halaman Kedua Belum Diaktifkan</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">Centang opsi "Aktifkan Halaman Kedua" di bawah untuk memunculkan halaman belakang dengan kriteria penilaian.</p>
+                      </div>
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center border-4 border-double border-blue-900 bg-blue-50/20 p-3 rounded">
+                        <div className="w-full max-w-lg bg-white/95 border border-gray-200 rounded p-3 shadow-xs flex flex-col items-center my-auto">
+                          <h4 className="text-[11px] font-bold text-blue-950 uppercase tracking-wider text-center border-b border-gray-300 pb-1 w-full">
+                            {certConfig.judulHalaman2 || 'Hasil Pemeriksaan / Kriteria Penilaian'}
+                          </h4>
+                          <p className="text-[8px] text-gray-500 my-1">Peserta: Nama Peserta Sertifikat • Lampiran Resmi Sertifikat A4</p>
+                          
+                          {/* Centered Assessment Table */}
+                          <div className="w-full border rounded overflow-hidden mt-1 text-[8px]">
+                            <div className="grid grid-cols-12 bg-gray-100 font-bold px-2 py-1 text-gray-700 border-b">
+                              <div className="col-span-1 text-center">No</div>
+                              <div className="col-span-7">Nama Kriteria Penilaian</div>
+                              <div className="col-span-4 text-center">Hasil / Keterangan</div>
+                            </div>
+                            <div className="divide-y divide-gray-100 bg-white">
+                              {(certConfig.kriteriaPenilaian && certConfig.kriteriaPenilaian.length > 0) ? (
+                                certConfig.kriteriaPenilaian.slice(0, 6).map((item, idx) => (
+                                  <div key={idx} className="grid grid-cols-12 px-2 py-1 items-center">
+                                    <div className="col-span-1 text-center text-gray-500 font-semibold">{idx + 1}</div>
+                                    <div className="col-span-7 text-gray-800 truncate">{item.nama || 'Nama Kriteria'}</div>
+                                    <div className="col-span-4 text-center font-bold text-emerald-700 truncate">{item.hasil || 'Normal'}</div>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="p-2 text-center text-[8px] text-gray-400">Belum ada kriteria penilaian yang ditambahkan</div>
+                              )}
+                            </div>
+                          </div>
+
+                          <p className="text-[7px] text-gray-400 text-center mt-2">Posisi Center Otomatis (Vertikal & Horizontal)</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Section 4: Halaman Kedua (Belakang Sertifikat) & Kriteria Penilaian */}
+            <div className="bg-gray-50/70 p-4 rounded-lg border border-gray-200 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">4. Halaman Kedua (Belakang Sertifikat) & Kriteria Penilaian</h3>
+                  <p className="text-xs text-gray-500">Aktifkan untuk menambahkan halaman belakang berupa lampiran kriteria penilaian atau hasil pemeriksaan.</p>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded border border-gray-200 shadow-sm hover:bg-gray-50 transition">
+                  <input 
+                    type="checkbox" 
+                    checked={certConfig.showHalaman2} 
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setCertConfig({
+                        ...certConfig, 
+                        showHalaman2: checked,
+                        kriteriaPenilaian: (checked && (!certConfig.kriteriaPenilaian || certConfig.kriteriaPenilaian.length === 0)) ? [
+                          { id: '1', nama: 'Kriteria Penilaian 1', hasil: 'Sesuai Standar / Baik' }
+                        ] : (certConfig.kriteriaPenilaian || [])
+                      });
+                      if (checked) setPreviewTab('page2');
+                    }}
+                    className="w-4 h-4 text-blue-600 rounded" 
+                  />
+                  <span className="text-xs font-bold text-gray-800">Aktifkan Halaman Kedua</span>
+                </label>
+              </div>
+
+              {certConfig.showHalaman2 && (
+                <div className="space-y-4 pt-1">
+                  <div className="bg-white p-3 rounded-lg border border-gray-200">
+                    <label className="block text-xs font-bold text-gray-700 mb-1">Judul Lampiran Halaman Kedua</label>
+                    <input 
+                      type="text" 
+                      value={certConfig.judulHalaman2 || ''} 
+                      onChange={(e) => setCertConfig({...certConfig, judulHalaman2: e.target.value})}
+                      placeholder="Contoh: Hasil Pemeriksaan Kesehatan / Penilaian Uji Kompetensi"
+                      className="w-full px-3 py-2 border rounded-md text-sm"
                     />
-                  ) : (
-                    <div className="absolute inset-0 border-8 border-double border-blue-900 bg-blue-50/30 flex flex-col items-center justify-center p-4 text-center">
-                      <p className="text-[10px] font-serif font-bold text-blue-950 uppercase tracking-widest">SERTIFIKAT PENGHARGAAN</p>
-                    </div>
-                  )}
+                  </div>
 
-                  {/* Elements overlay in preview scaled to container */}
-                  <div className="absolute inset-0 z-10 pointer-events-none p-2 flex flex-col justify-between">
-                    {/* Top: Judul & Tema */}
-                    <div className="w-full text-center space-y-1 mt-2">
-                      {certConfig.showJudul && (
-                        <p className={`text-[11px] font-bold text-gray-900 uppercase tracking-wide leading-tight ${
-                          certConfig.judulAlign === 'left' ? 'text-left pl-6' : 
-                          certConfig.judulAlign === 'right' ? 'text-right pr-6' : 'text-center'
-                        }`}>
-                          {newEvent.Judul || 'Judul Kegiatan'}
-                        </p>
-                      )}
-                      {certConfig.showTema && (
-                        <p className={`text-[9px] italic text-gray-700 leading-tight ${
-                          certConfig.temaAlign === 'left' ? 'text-left pl-6' : 
-                          certConfig.temaAlign === 'right' ? 'text-right pr-6' : 'text-center'
-                        }`}>
-                          "{newEvent.Tema || 'Tema Kegiatan'}"
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Middle: Participant Name Sample */}
-                    <div className="w-full text-center my-auto">
-                      <p className="text-[7px] uppercase tracking-widest text-gray-500 font-semibold mb-0.5">Diberikan Kepada</p>
-                      <h4 className="text-[15px] font-bold text-gray-900 border-b border-gray-400 inline-block px-4 pb-0.5" style={{ fontFamily: 'serif' }}>
-                        Nama Peserta Sertifikat
-                      </h4>
+                  <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <h4 className="text-xs font-bold text-gray-800 uppercase">Daftar Kriteria Penilaian</h4>
+                        <p className="text-[11px] text-gray-500">Kriteria otomatis tertanam rapi di posisi <strong>center (tengah horizontal dan vertikal)</strong> pada halaman kedua sertifikat.</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            const newId = `crit-${Date.now()}`;
+                            setCertConfig({
+                              ...certConfig,
+                              kriteriaPenilaian: [
+                                ...(certConfig.kriteriaPenilaian || []),
+                                { id: newId, nama: '', hasil: '' }
+                              ]
+                            });
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-md font-semibold flex items-center gap-1.5 shadow-sm transition"
+                        >
+                          <Plus size={14} /> Tambah Kriteria Penilaian
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Bottom: Date & Signatures */}
-                    <div className="w-full space-y-2">
-                      {certConfig.showTanggal && (
-                        <p className={`text-[8px] font-semibold text-gray-800 ${
-                          certConfig.tanggalAlign === 'left' ? 'text-left pl-6' : 
-                          certConfig.tanggalAlign === 'right' ? 'text-right pr-6' : 'text-center'
-                        }`}>
-                          Tanggal: {newEvent.TanggalPelaksanaan || 'Tanggal Pelaksanaan'}
-                        </p>
-                      )}
+                    {/* Presets buttons */}
+                    <div className="flex items-center gap-2 pt-1 pb-1 flex-wrap">
+                      <span className="text-[11px] text-gray-500 font-medium">Muat Contoh:</span>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setCertConfig({
+                            ...certConfig,
+                            judulHalaman2: 'Hasil Pemeriksaan Kesehatan Medical Check Up',
+                            kriteriaPenilaian: [
+                              { id: '1', nama: 'Tekanan Darah', hasil: 'Normal (120/80 mmHg)' },
+                              { id: '2', nama: 'Gula Darah Acak (GDA)', hasil: 'Normal (< 200 mg/dL)' },
+                              { id: '3', nama: 'Skrining TB Paru', hasil: 'Negatif / Tidak Gejala' },
+                              { id: '4', nama: 'Pemeriksaan HBsAg', hasil: 'Non-Reaktif' },
+                              { id: '5', nama: 'Indeks Massa Tubuh (IMT)', hasil: 'Normal / Ideal' }
+                            ]
+                          });
+                        }}
+                        className="text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded transition font-medium"
+                      >
+                        + Contoh MCU Kesehatan
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setCertConfig({
+                            ...certConfig,
+                            judulHalaman2: 'Hasil Penilaian Uji Kompetensi & Pelatihan',
+                            kriteriaPenilaian: [
+                              { id: '1', nama: 'Ujian Pemahaman Teori (Post-Test)', hasil: '85 / 100 (Lulus)' },
+                              { id: '2', nama: 'Keterampilan Praktek & Simulasi', hasil: 'Sangat Baik (A)' },
+                              { id: '3', nama: 'Tingkat Kehadiran & Partisipasi', hasil: '100% (Lengkap)' },
+                              { id: '4', nama: 'Evaluasi Sikap & Disiplin', hasil: 'Memuaskan' }
+                            ]
+                          });
+                        }}
+                        className="text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 px-2.5 py-1 rounded transition font-medium"
+                      >
+                        + Contoh Pelatihan / Ujian
+                      </button>
+                    </div>
 
-                      {certConfig.showTTD && (
-                        <div className={`w-full px-6 flex text-[8px] text-gray-800 pb-1 ${
-                          certConfig.layout === 'Tengah' ? 'justify-center' :
-                          certConfig.layout === 'Kanan' ? 'justify-end' :
-                          certConfig.layout === 'Kiri' ? 'justify-start' :
-                          'justify-between'
-                        }`}>
-                          {(certConfig.layout === 'Kiri' || certConfig.layout === 'Kiri-Kanan') && (
-                            <div className="text-center w-28">
-                              <p className="font-bold border-b border-gray-700 pb-0.5">{newEvent.TTD1_Nama || 'Nama Penandatangan 1'}</p>
-                              <p className="text-[7px] text-gray-600">{newEvent.TTD1_NIP || 'NIP/SIP'}</p>
-                            </div>
-                          )}
-
-                          {certConfig.layout === 'Tengah' && (
-                            <div className="text-center w-32">
-                              <p className="font-bold border-b border-gray-700 pb-0.5">{newEvent.TTD1_Nama || newEvent.TTD2_Nama || 'Nama Penandatangan'}</p>
-                              <p className="text-[7px] text-gray-600">{newEvent.TTD1_NIP || newEvent.TTD2_NIP || 'NIP/SIP'}</p>
-                            </div>
-                          )}
-
-                          {(certConfig.layout === 'Kanan' || certConfig.layout === 'Kiri-Kanan') && (
-                            <div className="text-center w-28">
-                              <p className="font-bold border-b border-gray-700 pb-0.5">{newEvent.TTD2_Nama || 'Nama Penandatangan 2'}</p>
-                              <p className="text-[7px] text-gray-600">{newEvent.TTD2_NIP || 'NIP/SIP'}</p>
-                            </div>
-                          )}
+                    {/* Criteria List */}
+                    <div className="space-y-2 mt-2">
+                      {(!certConfig.kriteriaPenilaian || certConfig.kriteriaPenilaian.length === 0) ? (
+                        <div className="text-center py-6 border border-dashed rounded-lg bg-gray-50 text-gray-500 text-xs">
+                          Belum ada kriteria penilaian. Klik tombol <strong>"+ Tambah Kriteria Penilaian"</strong> atau pilih tombol contoh cepat di atas.
+                        </div>
+                      ) : (
+                        <div className="border rounded-lg overflow-hidden">
+                          <div className="grid grid-cols-12 gap-2 bg-gray-100 px-3 py-2 text-[11px] font-bold text-gray-700 uppercase">
+                            <div className="col-span-1 text-center">No</div>
+                            <div className="col-span-6">Nama Kriteria Penilaian</div>
+                            <div className="col-span-4">Hasil / Standar / Nilai</div>
+                            <div className="col-span-1 text-center">Aksi</div>
+                          </div>
+                          <div className="divide-y divide-gray-100 bg-white">
+                            {certConfig.kriteriaPenilaian.map((item, index) => (
+                              <div key={item.id || index} className="grid grid-cols-12 gap-2 px-3 py-2 items-center text-xs">
+                                <div className="col-span-1 text-center font-bold text-gray-500">{index + 1}</div>
+                                <div className="col-span-6">
+                                  <input 
+                                    type="text" 
+                                    value={item.nama} 
+                                    onChange={(e) => {
+                                      const updated = [...certConfig.kriteriaPenilaian];
+                                      updated[index] = { ...updated[index], nama: e.target.value };
+                                      setCertConfig({ ...certConfig, kriteriaPenilaian: updated });
+                                    }}
+                                    placeholder="Contoh: Tekanan Darah / Praktek"
+                                    className="w-full px-2 py-1.5 border rounded text-xs"
+                                  />
+                                </div>
+                                <div className="col-span-4">
+                                  <input 
+                                    type="text" 
+                                    value={item.hasil} 
+                                    onChange={(e) => {
+                                      const updated = [...certConfig.kriteriaPenilaian];
+                                      updated[index] = { ...updated[index], hasil: e.target.value };
+                                      setCertConfig({ ...certConfig, kriteriaPenilaian: updated });
+                                    }}
+                                    placeholder="Contoh: Normal (120/80 mmHg) / 85 (Lulus)"
+                                    className="w-full px-2 py-1.5 border rounded text-xs font-medium text-emerald-800"
+                                  />
+                                </div>
+                                <div className="col-span-1 text-center">
+                                  <button 
+                                    type="button" 
+                                    onClick={() => {
+                                      const updated = certConfig.kriteriaPenilaian.filter((_, i) => i !== index);
+                                      setCertConfig({ ...certConfig, kriteriaPenilaian: updated });
+                                    }}
+                                    className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition"
+                                    title="Hapus Kriteria"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Action Buttons */}
