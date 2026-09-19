@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchSheetData, appendSheetData } from '../../lib/api';
-import { CheckCircle, Circle, Download, Loader2 } from 'lucide-react';
+import { CheckCircle, Circle, Download, Loader2, Eye, X } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import html2canvas from 'html2canvas-pro';
 import jsPDF from 'jspdf';
+import { parseCertConfig } from '../../lib/certConfig';
 
 export default function EventDetail() {
   const { eventId } = useParams();
@@ -12,6 +13,7 @@ export default function EventDetail() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [base64Template, setBase64Template] = useState<string | null>(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const certRef = useRef<HTMLDivElement>(null);
   const certPage2Ref = useRef<HTMLDivElement>(null);
 
@@ -195,15 +197,25 @@ export default function EventDetail() {
         useCORS: true,
         allowTaint: false,
         logging: false,
+        width: 1123,
+        height: 794,
+        windowWidth: 1200,
+        windowHeight: 900,
         scrollX: 0,
-        scrollY: -window.scrollY
+        scrollY: 0,
+        x: 0,
+        y: 0
       });
-      const imgData1 = canvas1.toDataURL('image/jpeg', 1.0);
+      const imgData1 = canvas1.toDataURL('image/jpeg', 0.98);
       
-      const pdf = new jsPDF('l', 'mm', 'a4');
-      const pdfWidth = 297;
-      const pdfHeight = 210;
-      pdf.addImage(imgData1, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+      });
+      // 297mm x 210mm is exact standard A4 landscape
+      pdf.addImage(imgData1, 'JPEG', 0, 0, 297, 210, undefined, 'FAST');
 
       if (certPage2Ref.current) {
         const canvas2 = await html2canvas(certPage2Ref.current, { 
@@ -211,15 +223,21 @@ export default function EventDetail() {
           useCORS: true,
           allowTaint: false,
           logging: false,
+          width: 1123,
+          height: 794,
+          windowWidth: 1200,
+          windowHeight: 900,
           scrollX: 0,
-          scrollY: -window.scrollY
+          scrollY: 0,
+          x: 0,
+          y: 0
         });
-        const imgData2 = canvas2.toDataURL('image/jpeg', 1.0);
+        const imgData2 = canvas2.toDataURL('image/jpeg', 0.98);
         pdf.addPage('a4', 'l');
-        pdf.addImage(imgData2, 'JPEG', 0, 0, 297, 210);
+        pdf.addImage(imgData2, 'JPEG', 0, 0, 297, 210, undefined, 'FAST');
       }
 
-      pdf.save(`${event.Judul}_Certificate_${user.Nama}.pdf`);
+      pdf.save(`Sertifikat_${(event.Judul || 'Kegiatan').replace(/[^a-zA-Z0-9]/g, '_')}_${(user.Nama || 'Peserta').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
     } catch (error) {
       console.error(error);
       alert("Gagal generate PDF");
@@ -232,6 +250,7 @@ export default function EventDetail() {
   if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin" size={32} /></div>;
   if (!event || !reg) return <div className="text-center p-12">Data tidak ditemukan.</div>;
 
+  const certConfig = parseCertConfig(event?.TTD_LayoutConfig, event?.Judul);
   const hasAttended = !!attendance;
   const hasPreTest = testData?.PreTestScore !== undefined && testData?.PreTestScore !== '';
   const hasPostTest = testData?.PostTestScore !== undefined && testData?.PostTestScore !== '';
@@ -375,30 +394,209 @@ export default function EventDetail() {
         </div>
 
         {/* Step 4: Certificate */}
-        <div className={`p-5 border rounded-xl transition flex justify-between items-center ${!isPostTestPass ? 'opacity-50 pointer-events-none bg-gray-50' : 'bg-white border-blue-200 shadow-sm'}`}>
+        <div className={`p-5 border rounded-xl transition flex flex-col sm:flex-row justify-between sm:items-center gap-4 ${!isPostTestPass ? 'opacity-50 pointer-events-none bg-gray-50' : 'bg-white border-blue-200 shadow-sm'}`}>
           <div className="flex items-center gap-4">
-            {isPostTestPass ? <CheckCircle className="text-blue-600" /> : <Circle className="text-gray-300" />}
+            {isPostTestPass ? <CheckCircle className="text-blue-600 shrink-0" /> : <Circle className="text-gray-300 shrink-0" />}
             <div>
-              <h3 className="font-bold text-gray-900">4. Unduh Sertifikat</h3>
-              <p className="text-sm text-gray-500">Sertifikat Anda telah siap.</p>
+              <h3 className="font-bold text-gray-900">4. Unduh Sertifikat (Format A4)</h3>
+              <p className="text-sm text-gray-500">Sertifikat Anda telah siap dalam format A4 standar resmi.</p>
             </div>
           </div>
           {isPostTestPass && (
-             <button onClick={handleDownloadCertificate} disabled={actionLoading} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-blue-700">
-               <Download size={18} /> {actionLoading ? 'Memproses...' : 'Unduh'}
-             </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button 
+                onClick={() => setShowPreviewModal(true)} 
+                className="bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-gray-200 transition text-sm"
+              >
+                <Eye size={18} /> Pratinjau
+              </button>
+              <button 
+                onClick={handleDownloadCertificate} 
+                disabled={actionLoading} 
+                className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-blue-700 transition shadow-sm text-sm"
+              >
+                {actionLoading ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
+                {actionLoading ? 'Memproses PDF A4...' : 'Unduh Sertifikat A4'}
+              </button>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Hidden Certificate Template for PDF Generation */}
+      {/* Certificate Preview Modal */}
+      {showPreviewModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[95vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+              <div>
+                <h3 className="font-bold text-gray-900 text-lg">Pratinjau Sertifikat (Format A4 Landscape)</h3>
+                <p className="text-xs text-gray-500">Sertifikat akan diunduh dalam dimensi presisi standar A4 (297 × 210 mm) tanpa terpotong.</p>
+              </div>
+              <button 
+                onClick={() => setShowPreviewModal(false)}
+                className="p-1.5 text-gray-500 hover:text-gray-800 rounded-lg hover:bg-gray-200 transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto p-4 md:p-6 bg-gray-100 flex flex-col items-center">
+              {/* Scaled Preview Frame maintaining 1123:794 (A4) aspect ratio */}
+              <div className="w-full max-w-3xl bg-white shadow-lg rounded-sm overflow-hidden border border-gray-300 relative aspect-[1123/794]">
+                {backgroundImageUrl ? (
+                  <img 
+                    src={backgroundImageUrl} 
+                    alt="Certificate Template" 
+                    className={`absolute inset-0 w-full h-full ${
+                      certConfig.bgFit === 'contain' ? 'object-contain' : 
+                      certConfig.bgFit === 'cover' ? 'object-cover' : 'object-fill'
+                    }`}
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-blue-50/50"></div>
+                )}
+
+                {/* Overlaid preview elements proportional */}
+                <div className="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between">
+                  {certConfig.showJudul && event.Judul && (
+                    <div 
+                      className={`absolute w-full px-8 ${
+                        certConfig.judulAlign === 'left' ? 'text-left pl-12' : 
+                        certConfig.judulAlign === 'right' ? 'text-right pr-12' : 'text-center'
+                      }`}
+                      style={{ top: `${(certConfig.judulTop / 794) * 100}%` }}
+                    >
+                      <h2 className="text-xs sm:text-sm md:text-base font-serif font-bold text-gray-900 uppercase">
+                        {event.Judul}
+                      </h2>
+                    </div>
+                  )}
+
+                  {certConfig.showTema && event.Tema && (
+                    <div 
+                      className={`absolute w-full px-8 ${
+                        certConfig.temaAlign === 'left' ? 'text-left pl-12' : 
+                        certConfig.temaAlign === 'right' ? 'text-right pr-12' : 'text-center'
+                      }`}
+                      style={{ top: `${(certConfig.temaTop / 794) * 100}%` }}
+                    >
+                      <p className="text-[10px] sm:text-xs text-gray-800 italic">
+                        "{event.Tema}"
+                      </p>
+                    </div>
+                  )}
+
+                  <div 
+                    className="absolute w-full text-center"
+                    style={{ top: `${(365 / 794) * 100}%` }}
+                  >
+                    <h1 
+                      className="text-lg sm:text-2xl md:text-3xl font-bold text-black"
+                      style={{ fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive' }}
+                    >
+                      {user.Nama}
+                    </h1>
+                  </div>
+
+                  <div 
+                    className="absolute right-8 flex flex-col items-center bg-white p-1 rounded shadow-sm border"
+                    style={{ top: `${(425 / 794) * 100}%` }}
+                  >
+                    <QRCodeCanvas value={validationUrl} size={36} level="M" fgColor="#000000" />
+                    <span className="text-[6px] font-bold text-black">{certificate?.CertNumber || 'CERT-PREVIEW'}</span>
+                  </div>
+
+                  {certConfig.showTanggal && (
+                    <div 
+                      className={`absolute w-full px-8 ${
+                        certConfig.tanggalAlign === 'left' ? 'text-left pl-12' : 
+                        certConfig.tanggalAlign === 'right' ? 'text-right pr-12' : 'text-center'
+                      }`}
+                      style={{ top: `${(certConfig.tanggalTop / 794) * 100}%` }}
+                    >
+                      <span className="text-[9px] sm:text-[11px] font-semibold text-gray-900">
+                        {formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}
+                      </span>
+                    </div>
+                  )}
+
+                  {certConfig.showTTD && (
+                    <div 
+                      className={`absolute w-full px-12 flex ${
+                        certConfig.layout === 'Tengah' ? 'justify-center' :
+                        certConfig.layout === 'Kanan' ? 'justify-end' :
+                        certConfig.layout === 'Kiri' ? 'justify-start' :
+                        'justify-between'
+                      }`}
+                      style={{ bottom: `${(certConfig.ttdBottom / 794) * 100}%` }}
+                    >
+                      {(certConfig.layout === 'Kiri' || certConfig.layout === 'Kiri-Kanan') && (
+                        <div className="text-center text-[8px] sm:text-[10px]">
+                          <p className="font-bold text-gray-900 border-b border-black pb-0.5">{event.TTD1_Nama || 'Penandatangan 1'}</p>
+                          {event.TTD1_NIP && <p className="text-gray-700">{event.TTD1_NIP}</p>}
+                        </div>
+                      )}
+
+                      {certConfig.layout === 'Tengah' && (
+                        <div className="text-center text-[8px] sm:text-[10px]">
+                          <p className="font-bold text-gray-900 border-b border-black pb-0.5">{event.TTD1_Nama || event.TTD2_Nama || 'Penandatangan'}</p>
+                          {(event.TTD1_NIP || event.TTD2_NIP) && <p className="text-gray-700">{event.TTD1_NIP || event.TTD2_NIP}</p>}
+                        </div>
+                      )}
+
+                      {(certConfig.layout === 'Kanan' || certConfig.layout === 'Kiri-Kanan') && (
+                        <div className="text-center text-[8px] sm:text-[10px]">
+                          <p className="font-bold text-gray-900 border-b border-black pb-0.5">{event.TTD2_Nama || 'Penandatangan 2'}</p>
+                          {event.TTD2_NIP && <p className="text-gray-700">{event.TTD2_NIP}</p>}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t bg-gray-50 flex justify-end items-center gap-3">
+              <button 
+                onClick={() => setShowPreviewModal(false)}
+                className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-100 font-medium text-sm transition"
+              >
+                Tutup
+              </button>
+              <button 
+                onClick={() => {
+                  setShowPreviewModal(false);
+                  handleDownloadCertificate();
+                }}
+                disabled={actionLoading}
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition shadow-sm"
+              >
+                <Download size={16} /> Unduh Sekarang (A4)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden Certificate Template for High-Res PDF Generation (Exact A4 Landscape 1123 x 794 px) */}
       {isPostTestPass && (
-        <div className="fixed top-0 left-0 -z-50 pointer-events-none flex flex-col gap-10">
-          <div ref={certRef} className={`w-[1122px] h-[794px] bg-white relative flex flex-col items-center shrink-0 ${!backgroundImageUrl ? 'border-[10px] border-double border-blue-900 justify-center' : ''}`}>
-            
+        <div style={{ position: 'fixed', left: '-9999px', top: 0, zIndex: -100 }} aria-hidden="true">
+          <div 
+            ref={certRef} 
+            style={{ width: '1123px', height: '794px' }} 
+            className={`bg-white relative flex flex-col items-center shrink-0 overflow-hidden ${!backgroundImageUrl ? 'border-[10px] border-double border-blue-900 justify-center' : ''}`}
+          >
             {/* Background Template Image */}
             {backgroundImageUrl && (
-              <img src={base64Template || (backgroundImageUrl.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(backgroundImageUrl)}` : backgroundImageUrl)} crossOrigin="anonymous" alt="Template" className="absolute inset-0 w-full h-full object-fill z-0" />
+              <img 
+                src={base64Template || (backgroundImageUrl.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(backgroundImageUrl)}` : backgroundImageUrl)} 
+                crossOrigin="anonymous" 
+                alt="Template" 
+                className={`absolute inset-0 w-full h-full z-0 ${
+                  certConfig.bgFit === 'contain' ? 'object-contain' : 
+                  certConfig.bgFit === 'cover' ? 'object-cover' : 'object-fill'
+                }`} 
+              />
             )}
 
             {/* Fallback styling if no template image */}
@@ -408,121 +606,229 @@ export default function EventDetail() {
             
             {backgroundImageUrl ? (
               <div className="absolute inset-0 z-10">
-                {/* Name */}
-                <div className="absolute top-[372px] left-1/2 -translate-x-1/2 w-[813px] h-[98px] flex justify-center items-center">
-                  <h2 className={`${user.Nama.length > 35 ? 'text-[39px]' : user.Nama.length > 25 ? 'text-[48px]' : 'text-[59px]'} font-bold text-black leading-none text-center`} style={{ fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive' }}>{user.Nama}</h2>
+                {/* Judul Kegiatan */}
+                {certConfig.showJudul && event.Judul && (
+                  <div 
+                    className={`absolute w-[880px] z-10 ${
+                      certConfig.judulAlign === 'left' ? 'left-[120px] text-left' : 
+                      certConfig.judulAlign === 'right' ? 'right-[120px] text-right' : 
+                      'left-1/2 -translate-x-1/2 text-center'
+                    }`}
+                    style={{ top: `${certConfig.judulTop || 210}px` }}
+                  >
+                    <h1 className="text-[26px] font-serif font-bold text-gray-900 tracking-wide uppercase leading-tight drop-shadow-sm">
+                      {event.Judul}
+                    </h1>
+                  </div>
+                )}
+
+                {/* Tema Kegiatan */}
+                {certConfig.showTema && event.Tema && (
+                  <div 
+                    className={`absolute w-[880px] z-10 ${
+                      certConfig.temaAlign === 'left' ? 'left-[120px] text-left' : 
+                      certConfig.temaAlign === 'right' ? 'right-[120px] text-right' : 
+                      'left-1/2 -translate-x-1/2 text-center'
+                    }`}
+                    style={{ top: `${certConfig.temaTop || 265}px` }}
+                  >
+                    <h3 className="text-[17px] font-sans font-medium text-gray-800 italic leading-snug">
+                      "{event.Tema}"
+                    </h3>
+                  </div>
+                )}
+
+                {/* Nama Peserta */}
+                <div className="absolute top-[365px] left-1/2 -translate-x-1/2 w-[850px] flex justify-center items-center z-10">
+                  <h2 className={`${user.Nama?.length > 35 ? 'text-[38px]' : user.Nama?.length > 25 ? 'text-[46px]' : 'text-[54px]'} font-bold text-black leading-none text-center`} style={{ fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive' }}>
+                    {user.Nama}
+                  </h2>
                 </div>
                 
-                {/* QR Code */}
-                <div className="absolute top-[429px] right-[119px] flex flex-col items-center bg-white p-1 rounded-sm shadow-sm">
-                  <QRCodeCanvas value={validationUrl} size={67} level="M" fgColor="#000000" />
-                  <p className="text-[8px] mt-0.5 text-black font-bold whitespace-nowrap">{certificate.CertNumber}</p>
+                {/* QR Code & Cert Number */}
+                <div className="absolute top-[425px] right-[115px] flex flex-col items-center bg-white p-1 rounded-sm shadow-sm border border-gray-100 z-10">
+                  <QRCodeCanvas value={validationUrl} size={65} level="M" fgColor="#000000" />
+                  <p className="text-[8px] mt-0.5 text-black font-bold whitespace-nowrap">{certificate?.CertNumber || ''}</p>
                 </div>
 
-                {/* Health Status */}
-                <div className="absolute top-[509px] left-1/2 -translate-x-1/2 w-[561px] text-center flex justify-center">
-                  <h4 className="text-[31px] font-bold text-white uppercase tracking-widest mt-0.5">
-                    {healthStatus === 'Laik' ? 'SEHAT / LAIK SEHAT' : healthStatus}
-                  </h4>
-                </div>
+                {/* Health Status (If MCU / Health Assessment done) */}
+                {healthDetails && healthStatus !== 'Belum Dinilai' && (
+                  <div className="absolute top-[505px] left-1/2 -translate-x-1/2 w-[560px] text-center flex justify-center z-10">
+                    <h4 className="text-[28px] font-bold text-white uppercase tracking-widest bg-emerald-800/85 px-6 py-0.5 rounded shadow-sm">
+                      {healthStatus === 'Laik' ? 'SEHAT / LAIK SEHAT' : healthStatus}
+                    </h4>
+                  </div>
+                )}
 
-                {/* Date */}
-                <div className="absolute top-[565px] left-[631px]">
-                  <p className="text-[20px] text-black font-bold">{formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}</p>
-                </div>
+                {/* Tanggal Pelaksanaan */}
+                {certConfig.showTanggal && (
+                  <div 
+                    className={`absolute z-10 ${
+                      certConfig.tanggalAlign === 'left' ? 'left-[120px] text-left' :
+                      certConfig.tanggalAlign === 'right' ? 'right-[120px] text-right' :
+                      'left-1/2 -translate-x-1/2 text-center w-full'
+                    }`}
+                    style={{ top: `${certConfig.tanggalTop || 565}px` }}
+                  >
+                    <p className="text-[18px] text-black font-semibold">
+                      {formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}
+                    </p>
+                  </div>
+                )}
 
-                {/* Signatures */}
-                <div className="absolute bottom-[56px] w-full px-[112px] flex justify-between">
-                  <div className="text-center w-[314px] flex flex-col items-center pl-[45px]">
-                    {event.TTD1_Nama && (
-                      <div className="w-max px-2">
-                        <p className="font-bold text-[17px] text-black">{event.TTD1_Nama}</p>
+                {/* Penandatangan (TTD) */}
+                {certConfig.showTTD && (
+                  <div 
+                    className={`absolute w-full px-[115px] z-10 ${
+                      certConfig.layout === 'Tengah' ? 'flex justify-center' :
+                      certConfig.layout === 'Kanan' ? 'flex justify-end' :
+                      certConfig.layout === 'Kiri' ? 'flex justify-start' :
+                      'flex justify-between'
+                    }`}
+                    style={{ bottom: `${certConfig.ttdBottom || 56}px` }}
+                  >
+                    {(certConfig.layout === 'Kiri' || certConfig.layout === 'Kiri-Kanan') && (
+                      <div className="text-center w-[310px] flex flex-col items-center">
+                        {event.TTD1_Nama && (
+                          <div className="w-max px-2 border-b border-black pb-0.5">
+                            <p className="font-bold text-[16px] text-black">{event.TTD1_Nama}</p>
+                          </div>
+                        )}
+                        {event.TTD1_NIP && <p className="text-[13px] text-black font-medium mt-0.5">{event.TTD1_NIP}</p>}
                       </div>
                     )}
-                    {event.TTD1_NIP && <p className="text-[14px] text-black font-medium">{event.TTD1_NIP}</p>}
-                  </div>
 
-                  <div className="text-center w-[358px] flex flex-col items-center pr-[22px]">
-                    {event.TTD2_Nama && (
-                      <div className="w-max px-2">
-                        <p className="font-bold text-[12px] text-black">{event.TTD2_Nama}</p>
+                    {certConfig.layout === 'Tengah' && (
+                      <div className="text-center w-[350px] flex flex-col items-center">
+                        {(event.TTD1_Nama || event.TTD2_Nama) && (
+                          <div className="w-max px-2 border-b border-black pb-0.5">
+                            <p className="font-bold text-[16px] text-black">{event.TTD1_Nama || event.TTD2_Nama}</p>
+                          </div>
+                        )}
+                        {(event.TTD1_NIP || event.TTD2_NIP) && (
+                          <p className="text-[13px] text-black font-medium mt-0.5">{event.TTD1_NIP || event.TTD2_NIP}</p>
+                        )}
                       </div>
                     )}
-                    {event.TTD2_NIP && <p className="text-[10px] text-black font-medium">{event.TTD2_NIP}</p>}
+
+                    {(certConfig.layout === 'Kanan' || certConfig.layout === 'Kiri-Kanan') && (
+                      <div className="text-center w-[320px] flex flex-col items-center">
+                        {event.TTD2_Nama && (
+                          <div className="w-max px-2 border-b border-black pb-0.5">
+                            <p className="font-bold text-[15px] text-black">{event.TTD2_Nama}</p>
+                          </div>
+                        )}
+                        {event.TTD2_NIP && <p className="text-[12px] text-black font-medium mt-0.5">{event.TTD2_NIP}</p>}
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
               </div>
             ) : (
-              <div className="z-10 w-full h-full flex flex-col items-center relative p-6">
-                <h1 className="text-5xl font-serif font-bold text-[#1a5b57] mb-2 uppercase tracking-widest mt-12">SERTIFIKAT</h1>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-16 h-px bg-[#1a5b57]"></div>
-                  <h2 className="text-lg font-bold text-[#1a5b57] uppercase tracking-wider">{event.Judul}</h2>
-                  <div className="w-16 h-px bg-[#1a5b57]"></div>
-                </div>
+              <div className="z-10 w-full h-full flex flex-col items-center relative p-8">
+                <h1 className="text-5xl font-serif font-bold text-[#1a5b57] mb-2 uppercase tracking-widest mt-10">SERTIFIKAT</h1>
                 
-                {event.Tema && (
-                  <div className="bg-[#1a5b57] text-white px-10 py-1.5 mb-6 shadow-md rounded-sm flex items-center gap-2">
+                {certConfig.showJudul && event.Judul && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-16 h-px bg-[#1a5b57]"></div>
+                    <h2 className="text-lg font-bold text-[#1a5b57] uppercase tracking-wider">{event.Judul}</h2>
+                    <div className="w-16 h-px bg-[#1a5b57]"></div>
+                  </div>
+                )}
+                
+                {certConfig.showTema && event.Tema && (
+                  <div className="bg-[#1a5b57] text-white px-10 py-1.5 mb-5 shadow-md rounded-sm flex items-center gap-2">
                     <span className="text-green-300">🌿</span>
                     <h3 className="text-xl font-bold tracking-wider">{event.Tema}</h3>
                     <span className="text-green-300">🌿</span>
                   </div>
                 )}
                 
-                <div className="flex items-center gap-3 mb-2 mt-2">
+                <div className="flex items-center gap-3 mb-2 mt-1">
                   <span className="text-[#1a5b57] font-bold text-lg">➔</span>
                   <p className="text-[#1a5b57] font-bold text-sm tracking-widest uppercase">Diberikan Kepada</p>
                   <span className="text-[#1a5b57] font-bold text-lg">⬅</span>
                 </div>
                 
-                <div className="relative inline-block mb-2 mt-1">
+                <div className="relative inline-block mb-3 mt-1">
                    <h2 className="text-3xl font-bold text-black font-serif px-12 pb-1 inline-block border-b-2 border-gray-300">{user.Nama}</h2>
-                   <div className="absolute left-full top-1/2 -translate-y-1/2 ml-6 flex flex-col items-center bg-white p-1 rounded-sm shadow-sm">
+                   <div className="absolute left-full top-1/2 -translate-y-1/2 ml-6 flex flex-col items-center bg-white p-1 rounded-sm shadow-sm border border-gray-200">
                      <QRCodeCanvas value={validationUrl} size={64} level="M" fgColor="#000000" />
-                     <p className="text-[7px] mt-1 text-black font-bold whitespace-nowrap">{certificate.CertNumber}</p>
+                     <p className="text-[7px] mt-1 text-black font-bold whitespace-nowrap">{certificate?.CertNumber || ''}</p>
                    </div>
                 </div>
                 
-                <p className="text-xs text-center text-gray-800 max-w-lg mb-4 mt-2 leading-relaxed font-medium">
-                  Berdasarkan hasil pemeriksaan Medical Check Up yang telah dilakukan<br/>
-                  di Puskesmas Kalitengah, yang bersangkutan dinyatakan:
-                </p>
+                {healthDetails && healthStatus !== 'Belum Dinilai' && (
+                  <>
+                    <p className="text-xs text-center text-gray-800 max-w-lg mb-3 mt-1 leading-relaxed font-medium">
+                      Berdasarkan hasil pemeriksaan Medical Check Up yang telah dilakukan<br/>
+                      di Puskesmas Kalitengah, yang bersangkutan dinyatakan:
+                    </p>
+                    
+                    <div className="bg-[#1a5b57] text-white px-12 py-1.5 rounded-sm shadow-md flex items-center gap-3 mb-3">
+                      <span className="text-green-300">🌿</span>
+                      <h4 className="text-2xl font-bold uppercase tracking-wider">{healthStatus === 'Laik' ? 'SEHAT / LAIK SEHAT' : healthStatus}</h4>
+                      <span className="text-green-300">🌿</span>
+                    </div>
+                  </>
+                )}
                 
-                <div className="bg-[#1a5b57] text-white px-12 py-1.5 rounded-sm shadow-md flex items-center gap-3 mb-4">
-                  <span className="text-green-300">🌿</span>
-                  <h4 className="text-2xl font-bold uppercase tracking-wider">{healthStatus === 'Laik' ? 'SEHAT / LAIK SEHAT' : healthStatus}</h4>
-                  <span className="text-green-300">🌿</span>
-                </div>
+                {certConfig.showTanggal && (
+                  <p className="text-xs text-gray-800 font-bold mb-4">
+                    Tanggal Pelaksanaan : <span className="border-b border-gray-400 pb-0.5 px-4">{formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}</span>
+                  </p>
+                )}
                 
-                <p className="text-xs text-gray-800 font-bold mb-4">
-                  Tanggal Pemeriksaan : <span className="border-b border-gray-400 pb-0.5 px-4">{formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}</span>
-                </p>
-                
-                <div className="flex justify-between w-full px-16 mt-auto pb-6">
-                  <div className="text-center w-56 flex flex-col items-center">
-                    <p className="text-xs text-[#1a5b57] mb-12 font-bold">Dokter Pemeriksa</p>
-                    {event.TTD1_Nama ? (
-                      <div className="border-b border-gray-900 pb-0.5 mb-0.5 w-max px-4">
-                        <p className="font-bold text-xs text-gray-900">{event.TTD1_Nama}</p>
+                {certConfig.showTTD && (
+                  <div className={`flex w-full px-16 mt-auto pb-6 ${
+                    certConfig.layout === 'Tengah' ? 'justify-center' :
+                    certConfig.layout === 'Kanan' ? 'justify-end' :
+                    certConfig.layout === 'Kiri' ? 'justify-start' :
+                    'justify-between'
+                  }`}>
+                    {(certConfig.layout === 'Kiri' || certConfig.layout === 'Kiri-Kanan') && (
+                      <div className="text-center w-56 flex flex-col items-center">
+                        <p className="text-xs text-[#1a5b57] mb-12 font-bold">Dokter Pemeriksa / Penandatangan</p>
+                        {event.TTD1_Nama ? (
+                          <div className="border-b border-gray-900 pb-0.5 mb-0.5 w-max px-4">
+                            <p className="font-bold text-xs text-gray-900">{event.TTD1_Nama}</p>
+                          </div>
+                        ) : (
+                          <div className="border-b border-gray-900 pb-0.5 mb-0.5 h-4 w-32"></div>
+                        )}
+                        {event.TTD1_NIP && <p className="text-[10px] text-gray-900 font-medium">{event.TTD1_NIP}</p>}
                       </div>
-                    ) : (
-                      <div className="border-b border-gray-900 pb-0.5 mb-0.5 h-4 w-32"></div>
                     )}
-                    {event.TTD1_NIP && <p className="text-[10px] text-gray-900 font-medium">{event.TTD1_NIP}</p>}
-                  </div>
 
-                  <div className="text-center w-64 flex flex-col items-center">
-                    <p className="text-xs text-[#1a5b57] mb-12 font-bold">Mengetahui,<br/>Kepala Puskesmas Kalitengah</p>
-                    {event.TTD2_Nama ? (
-                      <div className="border-b border-gray-900 pb-0.5 mb-0.5 w-max px-4">
-                        <p className="font-bold text-xs text-gray-900">{event.TTD2_Nama}</p>
+                    {certConfig.layout === 'Tengah' && (
+                      <div className="text-center w-60 flex flex-col items-center">
+                        <p className="text-xs text-[#1a5b57] mb-12 font-bold">Penandatangan</p>
+                        {(event.TTD1_Nama || event.TTD2_Nama) ? (
+                          <div className="border-b border-gray-900 pb-0.5 mb-0.5 w-max px-4">
+                            <p className="font-bold text-xs text-gray-900">{event.TTD1_Nama || event.TTD2_Nama}</p>
+                          </div>
+                        ) : (
+                          <div className="border-b border-gray-900 pb-0.5 mb-0.5 h-4 w-32"></div>
+                        )}
+                        {(event.TTD1_NIP || event.TTD2_NIP) && <p className="text-[10px] text-gray-900 font-medium">{event.TTD1_NIP || event.TTD2_NIP}</p>}
                       </div>
-                    ) : (
-                      <div className="border-b border-gray-900 pb-0.5 mb-0.5 h-4 w-40"></div>
                     )}
-                    {event.TTD2_NIP && <p className="text-[10px] text-gray-900 font-medium">{event.TTD2_NIP}</p>}
+
+                    {(certConfig.layout === 'Kanan' || certConfig.layout === 'Kiri-Kanan') && (
+                      <div className="text-center w-64 flex flex-col items-center">
+                        <p className="text-xs text-[#1a5b57] mb-12 font-bold">Mengetahui,<br/>Kepala Puskesmas Kalitengah</p>
+                        {event.TTD2_Nama ? (
+                          <div className="border-b border-gray-900 pb-0.5 mb-0.5 w-max px-4">
+                            <p className="font-bold text-xs text-gray-900">{event.TTD2_Nama}</p>
+                          </div>
+                        ) : (
+                          <div className="border-b border-gray-900 pb-0.5 mb-0.5 h-4 w-40"></div>
+                        )}
+                        {event.TTD2_NIP && <p className="text-[10px] text-gray-900 font-medium">{event.TTD2_NIP}</p>}
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
