@@ -358,6 +358,10 @@ export default function EventDetail() {
   if (!event || !reg) return <div className="text-center p-12">Data tidak ditemukan.</div>;
 
   const certConfig = parseCertConfig(event?.TTD_LayoutConfig, event?.Judul);
+  const isMCU = (event?.Judul && (
+    event.Judul.toLowerCase().includes('medical check') || 
+    event.Judul.toLowerCase().includes('mcu')
+  )) || !!healthDetails;
   const hasAttended = !!attendance;
   const hasPreTest = testData?.PreTestScore !== undefined && testData?.PreTestScore !== '';
   const hasPostTest = testData?.PostTestScore !== undefined && testData?.PostTestScore !== '';
@@ -664,9 +668,10 @@ export default function EventDetail() {
                       </div>
                     )}
 
+                    {/* Nama Peserta: Centered in name slot below DIBERIKAN KEPADA */}
                     <div 
                       className="absolute w-full text-center"
-                      style={{ top: `${(365 / 794) * 100}%` }}
+                      style={{ top: `${(370 / 794) * 100}%` }}
                     >
                       <h1 
                         className="text-lg sm:text-2xl md:text-3xl font-bold text-black"
@@ -676,23 +681,31 @@ export default function EventDetail() {
                       </h1>
                     </div>
 
+                    {/* QR Code & Cert Number: Inside 4th hexagon slot on the right */}
                     <div 
-                      className="absolute right-8 flex flex-col items-center bg-white p-1 rounded shadow-sm border"
-                      style={{ top: `${(425 / 794) * 100}%` }}
+                      className="absolute flex flex-col items-center bg-white p-1 rounded shadow-xs border border-gray-200"
+                      style={{ 
+                        top: `${(418 / 794) * 100}%`,
+                        left: `${(927 / 1123) * 100}%`,
+                        width: `${(74 / 1123) * 100}%`
+                      }}
                     >
-                      <QRCodeCanvas value={validationUrl} size={36} level="M" fgColor="#000000" />
-                      <span className="text-[6px] font-bold text-black">{certificate?.CertNumber || 'CERT-PREVIEW'}</span>
+                      <QRCodeCanvas value={validationUrl} size={34} level="M" fgColor="#000000" />
+                      <span className="text-[5.5px] sm:text-[6.5px] font-bold text-black font-mono mt-0.5 whitespace-nowrap">{certificate?.CertNumber || 'CERT-PREVIEW'}</span>
                     </div>
 
+                    {/* Tanggal Pelaksanaan: Across from Tanggal Pemeriksaan above right signature */}
                     {certConfig.showTanggal && (
                       <div 
-                        className={`absolute w-full px-8 ${
-                          certConfig.tanggalAlign === 'left' ? 'text-left pl-12' : 
-                          certConfig.tanggalAlign === 'right' ? 'text-right pr-12' : 'text-center'
-                        }`}
-                        style={{ top: `${(certConfig.tanggalTop / 794) * 100}%` }}
+                        className="absolute"
+                        style={{ 
+                          top: `${((certConfig.tanggalAlign === 'right' || isMCU ? 472 : certConfig.tanggalTop || 565) / 794) * 100}%`,
+                          left: certConfig.tanggalAlign === 'left' ? '12%' : (certConfig.tanggalAlign === 'right' || isMCU) ? `${(680 / 1123) * 100}%` : '0%',
+                          width: certConfig.tanggalAlign === 'left' ? '28%' : (certConfig.tanggalAlign === 'right' || isMCU) ? `${(260 / 1123) * 100}%` : '100%',
+                          textAlign: certConfig.tanggalAlign === 'left' ? 'left' : 'center'
+                        }}
                       >
-                        <span className="text-[9px] sm:text-[11px] font-semibold text-gray-900">
+                        <span className="text-[9px] sm:text-[11px] font-semibold text-gray-900 font-sans">
                           {formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}
                         </span>
                       </div>
@@ -815,13 +828,13 @@ export default function EventDetail() {
       {/* Hidden Certificate Template for High-Res PDF Generation (Exact A4 Landscape 1123 x 794 px) */}
       {isPostTestPass && (
         <div style={{ position: 'relative' }} aria-hidden="true">
-          {/* Page 1 Host: Locked at origin (0, 0) with hidden z-index to ensure perfect capture on both Mobile and Desktop */}
+          {/* Page 1 Host: Positioned off-screen with fixed 1123 x 794 px dimensions so mobile smartphone viewports never compress or misalign coordinates */}
           <div 
             id="cert-page1-host"
             style={{ 
               position: 'fixed', 
-              left: 0, 
-              top: 0, 
+              left: '-99999px', 
+              top: '0px', 
               width: '1123px', 
               minWidth: '1123px', 
               maxWidth: '1123px', 
@@ -847,6 +860,7 @@ export default function EventDetail() {
                 boxSizing: 'border-box',
                 WebkitTextSizeAdjust: '100%',
                 textSizeAdjust: '100%',
+                overflow: 'hidden'
               }} 
               className={`flex flex-col items-center shrink-0 overflow-hidden ${!backgroundImageUrl ? 'border-[10px] border-double border-blue-900 justify-center' : ''}`}
             >
@@ -902,10 +916,8 @@ export default function EventDetail() {
                       style={{ 
                         position: 'absolute',
                         top: `${certConfig.judulTop || 210}px`, 
-                        left: '121px', 
-                        width: '880px', 
-                        minWidth: '880px', 
-                        maxWidth: '880px',
+                        left: certConfig.judulAlign === 'left' ? '120px' : '0px', 
+                        width: certConfig.judulAlign === 'left' ? '880px' : '1123px', 
                         textAlign: certConfig.judulAlign || 'center',
                         zIndex: 10
                       }}
@@ -922,10 +934,8 @@ export default function EventDetail() {
                       style={{ 
                         position: 'absolute',
                         top: `${certConfig.temaTop || 265}px`, 
-                        left: '121px', 
-                        width: '880px', 
-                        minWidth: '880px', 
-                        maxWidth: '880px',
+                        left: certConfig.temaAlign === 'left' ? '120px' : '0px', 
+                        width: certConfig.temaAlign === 'left' ? '880px' : '1123px', 
                         textAlign: certConfig.temaAlign || 'center',
                         zIndex: 10
                       }}
@@ -936,15 +946,15 @@ export default function EventDetail() {
                     </div>
                   )}
 
-                  {/* Nama Peserta */}
+                  {/* Nama Peserta: Centered across 1123px canvas in the name slot below "DIBERIKAN KEPADA" */}
                   <div 
                     style={{ 
                       position: 'absolute',
-                      top: '365px', 
-                      left: '121px', 
-                      width: '880px', 
-                      minWidth: '880px', 
-                      maxWidth: '880px',
+                      top: '370px', 
+                      left: '0px', 
+                      width: '1123px', 
+                      minWidth: '1123px', 
+                      maxWidth: '1123px', 
                       display: 'flex',
                       justifyContent: 'center',
                       alignItems: 'center',
@@ -955,7 +965,7 @@ export default function EventDetail() {
                     <h2 
                       style={{ 
                         fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive',
-                        fontSize: user.Nama?.length > 35 ? '38px' : user.Nama?.length > 25 ? '46px' : '54px',
+                        fontSize: user.Nama?.length > 35 ? '36px' : user.Nama?.length > 25 ? '42px' : '48px',
                         fontWeight: 'bold',
                         color: '#000000',
                         lineHeight: 1,
@@ -967,25 +977,28 @@ export default function EventDetail() {
                     </h2>
                   </div>
                   
-                  {/* QR Code & Cert Number */}
+                  {/* QR Code & Cert Number: Placed in the 4th hexagon slot on the right side */}
                   <div 
                     style={{ 
                       position: 'absolute',
-                      top: '425px', 
-                      right: '115px',
+                      top: '418px', 
+                      left: '927px',
+                      width: '74px',
+                      minWidth: '74px',
+                      maxWidth: '74px',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
                       backgroundColor: '#ffffff',
                       padding: '4px',
-                      borderRadius: '4px',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                      borderRadius: '6px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
                       border: '1px solid #e5e7eb',
                       zIndex: 10
                     }}
                   >
-                    <QRCodeCanvas value={validationUrl} size={65} level="M" fgColor="#000000" />
-                    <p style={{ fontSize: '8px', marginTop: '3px', color: '#000000', fontWeight: 'bold', whiteSpace: 'nowrap', fontFamily: 'monospace', margin: '3px 0 0 0' }}>
+                    <QRCodeCanvas value={validationUrl} size={58} level="M" fgColor="#000000" />
+                    <p style={{ fontSize: '8px', marginTop: '2px', color: '#000000', fontWeight: 'bold', whiteSpace: 'nowrap', fontFamily: 'monospace', margin: '2px 0 0 0', textAlign: 'center' }}>
                       {certificate?.CertNumber || ''}
                     </p>
                   </div>
@@ -996,10 +1009,8 @@ export default function EventDetail() {
                       style={{ 
                         position: 'absolute',
                         top: '505px', 
-                        left: '281px', 
-                        width: '560px', 
-                        minWidth: '560px', 
-                        maxWidth: '560px',
+                        left: '0px', 
+                        width: '1123px', 
                         display: 'flex',
                         justifyContent: 'center',
                         textAlign: 'center',
@@ -1024,22 +1035,19 @@ export default function EventDetail() {
                     </div>
                   )}
 
-                  {/* Tanggal Pelaksanaan */}
+                  {/* Tanggal Pelaksanaan: Positioned across from "Tanggal Pemeriksaan :" above the right signature */}
                   {certConfig.showTanggal && (
                     <div 
                       style={{ 
                         position: 'absolute',
-                        top: `${certConfig.tanggalTop || 565}px`, 
-                        left: certConfig.tanggalAlign === 'left' ? '121px' : certConfig.tanggalAlign === 'right' ? 'auto' : '121px',
-                        right: certConfig.tanggalAlign === 'right' ? '121px' : 'auto',
-                        width: certConfig.tanggalAlign === 'right' ? '320px' : '880px', 
-                        minWidth: certConfig.tanggalAlign === 'right' ? '320px' : '880px', 
-                        maxWidth: certConfig.tanggalAlign === 'right' ? '320px' : '880px',
-                        textAlign: certConfig.tanggalAlign || 'center',
+                        top: `${(certConfig.tanggalAlign === 'right' || isMCU ? 472 : certConfig.tanggalTop || 565)}px`, 
+                        left: certConfig.tanggalAlign === 'left' ? '140px' : (certConfig.tanggalAlign === 'right' || isMCU) ? '680px' : '0px',
+                        width: certConfig.tanggalAlign === 'left' ? '320px' : (certConfig.tanggalAlign === 'right' || isMCU) ? '260px' : '1123px',
+                        textAlign: certConfig.tanggalAlign === 'left' ? 'left' : 'center',
                         zIndex: 10
                       }}
                     >
-                      <p style={{ fontSize: '18px', color: '#000000', fontWeight: 600, fontFamily: 'sans-serif', margin: 0 }}>
+                      <p style={{ fontSize: '15px', color: '#000000', fontWeight: 600, fontFamily: 'sans-serif', margin: 0, letterSpacing: '0.01em' }}>
                         {formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}
                       </p>
                     </div>
@@ -1051,46 +1059,39 @@ export default function EventDetail() {
                       style={{ 
                         position: 'absolute',
                         bottom: `${certConfig.ttdBottom || 56}px`, 
-                        left: 0, 
+                        left: '0px', 
                         width: '1123px', 
                         minWidth: '1123px', 
                         maxWidth: '1123px',
-                        paddingLeft: '115px',
-                        paddingRight: '115px',
-                        boxSizing: 'border-box',
-                        display: 'flex',
-                        justifyContent: certConfig.layout === 'Tengah' ? 'center' :
-                                        certConfig.layout === 'Kanan' ? 'flex-end' :
-                                        certConfig.layout === 'Kiri' ? 'flex-start' : 'space-between',
                         zIndex: 10
                       }}
                     >
                       {(certConfig.layout === 'Kiri' || certConfig.layout === 'Kiri-Kanan') && (
-                        <div style={{ textAlign: 'center', width: '310px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{ position: 'absolute', left: '120px', width: '300px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                           {event.TTD1_Nama && (
                             <div style={{ width: 'max-content', padding: '0 8px', borderBottom: '1px solid #000000', paddingBottom: '2px' }}>
-                              <p style={{ fontWeight: 'bold', fontSize: '16px', color: '#000000', margin: 0, fontFamily: 'sans-serif' }}>{event.TTD1_Nama}</p>
+                              <p style={{ fontWeight: 'bold', fontSize: '15px', color: '#000000', margin: 0, fontFamily: 'sans-serif' }}>{event.TTD1_Nama}</p>
                             </div>
                           )}
-                          {event.TTD1_NIP && <p style={{ fontSize: '13px', color: '#000000', fontWeight: 500, marginTop: '3px', margin: '3px 0 0 0', fontFamily: 'sans-serif' }}>{event.TTD1_NIP}</p>}
+                          {event.TTD1_NIP && <p style={{ fontSize: '12px', color: '#000000', fontWeight: 500, marginTop: '3px', margin: '3px 0 0 0', fontFamily: 'sans-serif' }}>{event.TTD1_NIP}</p>}
                         </div>
                       )}
 
                       {certConfig.layout === 'Tengah' && (
-                        <div style={{ textAlign: 'center', width: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{ position: 'absolute', left: '411px', width: '300px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                           {(event.TTD1_Nama || event.TTD2_Nama) && (
                             <div style={{ width: 'max-content', padding: '0 8px', borderBottom: '1px solid #000000', paddingBottom: '2px' }}>
-                              <p style={{ fontWeight: 'bold', fontSize: '16px', color: '#000000', margin: 0, fontFamily: 'sans-serif' }}>{event.TTD1_Nama || event.TTD2_Nama}</p>
+                              <p style={{ fontWeight: 'bold', fontSize: '15px', color: '#000000', margin: 0, fontFamily: 'sans-serif' }}>{event.TTD1_Nama || event.TTD2_Nama}</p>
                             </div>
                           )}
                           {(event.TTD1_NIP || event.TTD2_NIP) && (
-                            <p style={{ fontSize: '13px', color: '#000000', fontWeight: 500, marginTop: '3px', margin: '3px 0 0 0', fontFamily: 'sans-serif' }}>{event.TTD1_NIP || event.TTD2_NIP}</p>
+                            <p style={{ fontSize: '12px', color: '#000000', fontWeight: 500, marginTop: '3px', margin: '3px 0 0 0', fontFamily: 'sans-serif' }}>{event.TTD1_NIP || event.TTD2_NIP}</p>
                           )}
                         </div>
                       )}
 
                       {(certConfig.layout === 'Kanan' || certConfig.layout === 'Kiri-Kanan') && (
-                        <div style={{ textAlign: 'center', width: '320px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{ position: 'absolute', left: '700px', width: '300px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                           {event.TTD2_Nama && (
                             <div style={{ width: 'max-content', padding: '0 8px', borderBottom: '1px solid #000000', paddingBottom: '2px' }}>
                               <p style={{ fontWeight: 'bold', fontSize: '15px', color: '#000000', margin: 0, fontFamily: 'sans-serif' }}>{event.TTD2_Nama}</p>

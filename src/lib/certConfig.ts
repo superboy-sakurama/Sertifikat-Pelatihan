@@ -55,6 +55,7 @@ export function parseCertConfig(configStr?: string, eventTitle?: string): Certif
     showJudul: !isMCU,
     showTema: !isMCU,
     tanggalAlign: isMCU ? 'right' : 'center',
+    tanggalTop: isMCU ? 472 : 565,
     showHalaman2: !!isMCU,
     kriteriaPenilaian: isMCU ? [
       { id: '1', nama: 'Tekanan Darah', hasil: 'Normal / Sesuai Standar' },
