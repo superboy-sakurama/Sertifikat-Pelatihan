@@ -232,6 +232,40 @@ export default function EventDetail() {
           y: 0,
           backgroundColor: '#ffffff',
           onclone: (clonedDoc, clonedElement) => {
+            // Set base URL so relative assets resolve
+            try {
+              const base = clonedDoc.createElement('base');
+              base.href = window.location.origin;
+              clonedDoc.head.appendChild(base);
+            } catch (_) {}
+
+            // Clone all style and stylesheet link elements from host document into clonedDoc
+            try {
+              document.querySelectorAll('style, link[rel="stylesheet"]').forEach(node => {
+                clonedDoc.head.appendChild(node.cloneNode(true));
+              });
+            } catch (_) {}
+
+            // Extract all CSS rules from document.styleSheets into clonedDoc
+            try {
+              for (let i = 0; i < document.styleSheets.length; i++) {
+                const sheet = document.styleSheets[i];
+                try {
+                  if (sheet.cssRules && sheet.cssRules.length > 0) {
+                    const styleTag = clonedDoc.createElement('style');
+                    let rulesText = '';
+                    for (let j = 0; j < sheet.cssRules.length; j++) {
+                      rulesText += sheet.cssRules[j].cssText + '\n';
+                    }
+                    styleTag.appendChild(clonedDoc.createTextNode(rulesText));
+                    clonedDoc.head.appendChild(styleTag);
+                  }
+                } catch (_) {
+                  // cross-origin stylesheets ignore
+                }
+              }
+            } catch (_) {}
+
             // Force viewport to 1123px wide desktop layout so mobile viewports do not squash elements
             let viewportMeta = clonedDoc.querySelector('meta[name="viewport"]');
             if (!viewportMeta) {
@@ -242,8 +276,8 @@ export default function EventDetail() {
             viewportMeta.setAttribute('content', 'width=1123, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
 
             // Force global document dimensions & completely disable mobile text autosizing / font-boosting
-            const style = clonedDoc.createElement('style');
-            style.innerHTML = `
+            const resetStyle = clonedDoc.createElement('style');
+            resetStyle.innerHTML = `
               * {
                 -webkit-text-size-adjust: 100% !important;
                 text-size-adjust: 100% !important;
@@ -260,33 +294,18 @@ export default function EventDetail() {
                 overflow: hidden !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                position: static !important;
                 background-color: #ffffff !important;
               }
             `;
-            clonedDoc.head.appendChild(style);
+            clonedDoc.head.appendChild(resetStyle);
 
             if (clonedDoc.defaultView) {
               clonedDoc.defaultView.scrollTo(0, 0);
             }
 
-            // Squarely position parent host and target element at origin (0, 0)
-            if (clonedElement.parentElement) {
-              clonedElement.parentElement.style.position = 'absolute';
-              clonedElement.parentElement.style.top = '0px';
-              clonedElement.parentElement.style.left = '0px';
-              clonedElement.parentElement.style.width = '1123px';
-              clonedElement.parentElement.style.minWidth = '1123px';
-              clonedElement.parentElement.style.maxWidth = '1123px';
-              clonedElement.parentElement.style.height = '794px';
-              clonedElement.parentElement.style.minHeight = '794px';
-              clonedElement.parentElement.style.maxHeight = '794px';
-              clonedElement.parentElement.style.margin = '0px';
-              clonedElement.parentElement.style.padding = '0px';
-              clonedElement.parentElement.style.transform = 'none';
-              clonedElement.parentElement.style.zIndex = '1';
-              clonedElement.parentElement.style.visibility = 'visible';
-            }
+            // Move clonedElement directly to body as sole child to isolate from all parent styling/scroll/transforms
+            clonedDoc.body.innerHTML = '';
+            clonedDoc.body.appendChild(clonedElement);
 
             clonedElement.style.position = 'absolute';
             clonedElement.style.top = '0px';
@@ -299,7 +318,9 @@ export default function EventDetail() {
             clonedElement.style.maxHeight = '794px';
             clonedElement.style.transform = 'none';
             clonedElement.style.margin = '0px';
+            clonedElement.style.padding = '0px';
             clonedElement.style.visibility = 'visible';
+            clonedElement.style.display = 'flex';
           }
         });
       };
@@ -878,14 +899,18 @@ export default function EventDetail() {
                   {/* Judul Kegiatan */}
                   {certConfig.showJudul && event.Judul && (
                     <div 
-                      className={`absolute ${
-                        certConfig.judulAlign === 'left' ? 'left-[121px] text-left' : 
-                        certConfig.judulAlign === 'right' ? 'right-[121px] text-right' : 
-                        'left-[121px] text-center'
-                      }`}
-                      style={{ top: `${certConfig.judulTop || 210}px`, width: '880px', minWidth: '880px', maxWidth: '880px' }}
+                      style={{ 
+                        position: 'absolute',
+                        top: `${certConfig.judulTop || 210}px`, 
+                        left: '121px', 
+                        width: '880px', 
+                        minWidth: '880px', 
+                        maxWidth: '880px',
+                        textAlign: certConfig.judulAlign || 'center',
+                        zIndex: 10
+                      }}
                     >
-                      <h1 className="text-[26px] font-serif font-bold text-gray-900 tracking-wide uppercase leading-tight drop-shadow-sm">
+                      <h1 style={{ fontFamily: 'serif', fontSize: '26px', fontWeight: 'bold', color: '#111827', letterSpacing: '0.05em', textTransform: 'uppercase', lineHeight: 1.25, margin: 0 }}>
                         {event.Judul}
                       </h1>
                     </div>
@@ -894,14 +919,18 @@ export default function EventDetail() {
                   {/* Tema Kegiatan */}
                   {certConfig.showTema && event.Tema && (
                     <div 
-                      className={`absolute ${
-                        certConfig.temaAlign === 'left' ? 'left-[121px] text-left' : 
-                        certConfig.temaAlign === 'right' ? 'right-[121px] text-right' : 
-                        'left-[121px] text-center'
-                      }`}
-                      style={{ top: `${certConfig.temaTop || 265}px`, width: '880px', minWidth: '880px', maxWidth: '880px' }}
+                      style={{ 
+                        position: 'absolute',
+                        top: `${certConfig.temaTop || 265}px`, 
+                        left: '121px', 
+                        width: '880px', 
+                        minWidth: '880px', 
+                        maxWidth: '880px',
+                        textAlign: certConfig.temaAlign || 'center',
+                        zIndex: 10
+                      }}
                     >
-                      <h3 className="text-[17px] font-sans font-medium text-gray-800 italic leading-snug">
+                      <h3 style={{ fontFamily: 'sans-serif', fontSize: '17px', fontWeight: 500, fontStyle: 'italic', color: '#1f2937', lineHeight: 1.3, margin: 0 }}>
                         "{event.Tema}"
                       </h3>
                     </div>
@@ -909,30 +938,87 @@ export default function EventDetail() {
 
                   {/* Nama Peserta */}
                   <div 
-                    className="absolute flex justify-center items-center z-10"
-                    style={{ top: '365px', left: '121px', width: '880px', minWidth: '880px', maxWidth: '880px' }}
+                    style={{ 
+                      position: 'absolute',
+                      top: '365px', 
+                      left: '121px', 
+                      width: '880px', 
+                      minWidth: '880px', 
+                      maxWidth: '880px',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                      zIndex: 10
+                    }}
                   >
-                    <h2 className={`${user.Nama?.length > 35 ? 'text-[38px]' : user.Nama?.length > 25 ? 'text-[46px]' : 'text-[54px]'} font-bold text-black leading-none text-center`} style={{ fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive' }}>
+                    <h2 
+                      style={{ 
+                        fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive',
+                        fontSize: user.Nama?.length > 35 ? '38px' : user.Nama?.length > 25 ? '46px' : '54px',
+                        fontWeight: 'bold',
+                        color: '#000000',
+                        lineHeight: 1,
+                        textAlign: 'center',
+                        margin: 0
+                      }}
+                    >
                       {user.Nama}
                     </h2>
                   </div>
                   
                   {/* QR Code & Cert Number */}
                   <div 
-                    className="absolute flex flex-col items-center bg-white p-1 rounded-sm shadow-sm border border-gray-100 z-10"
-                    style={{ top: '425px', right: '115px' }}
+                    style={{ 
+                      position: 'absolute',
+                      top: '425px', 
+                      right: '115px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      backgroundColor: '#ffffff',
+                      padding: '4px',
+                      borderRadius: '4px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                      border: '1px solid #e5e7eb',
+                      zIndex: 10
+                    }}
                   >
                     <QRCodeCanvas value={validationUrl} size={65} level="M" fgColor="#000000" />
-                    <p className="text-[8px] mt-0.5 text-black font-bold whitespace-nowrap">{certificate?.CertNumber || ''}</p>
+                    <p style={{ fontSize: '8px', marginTop: '3px', color: '#000000', fontWeight: 'bold', whiteSpace: 'nowrap', fontFamily: 'monospace', margin: '3px 0 0 0' }}>
+                      {certificate?.CertNumber || ''}
+                    </p>
                   </div>
 
                   {/* Health Status (If MCU / Health Assessment done) */}
                   {healthDetails && healthStatus !== 'Belum Dinilai' && (
                     <div 
-                      className="absolute text-center flex justify-center z-10"
-                      style={{ top: '505px', left: '281px', width: '560px', minWidth: '560px', maxWidth: '560px' }}
+                      style={{ 
+                        position: 'absolute',
+                        top: '505px', 
+                        left: '281px', 
+                        width: '560px', 
+                        minWidth: '560px', 
+                        maxWidth: '560px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        textAlign: 'center',
+                        zIndex: 10
+                      }}
                     >
-                      <h4 className="text-[28px] font-bold text-white uppercase tracking-widest bg-emerald-800/85 px-6 py-0.5 rounded shadow-sm">
+                      <h4 style={{ 
+                        fontSize: '28px', 
+                        fontWeight: 'bold', 
+                        color: '#ffffff', 
+                        textTransform: 'uppercase', 
+                        letterSpacing: '0.1em', 
+                        backgroundColor: 'rgba(6, 78, 59, 0.88)', 
+                        padding: '4px 24px', 
+                        borderRadius: '4px', 
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)', 
+                        margin: 0, 
+                        fontFamily: 'sans-serif' 
+                      }}>
                         {healthStatus === 'Laik' ? 'SEHAT / LAIK SEHAT' : healthStatus}
                       </h4>
                     </div>
@@ -941,14 +1027,19 @@ export default function EventDetail() {
                   {/* Tanggal Pelaksanaan */}
                   {certConfig.showTanggal && (
                     <div 
-                      className={`absolute z-10 ${
-                        certConfig.tanggalAlign === 'left' ? 'left-[121px] text-left' :
-                        certConfig.tanggalAlign === 'right' ? 'right-[121px] text-right' :
-                        'left-[121px] text-center'
-                      }`}
-                      style={{ top: `${certConfig.tanggalTop || 565}px`, width: '880px', minWidth: '880px', maxWidth: '880px' }}
+                      style={{ 
+                        position: 'absolute',
+                        top: `${certConfig.tanggalTop || 565}px`, 
+                        left: certConfig.tanggalAlign === 'left' ? '121px' : certConfig.tanggalAlign === 'right' ? 'auto' : '121px',
+                        right: certConfig.tanggalAlign === 'right' ? '121px' : 'auto',
+                        width: certConfig.tanggalAlign === 'right' ? '320px' : '880px', 
+                        minWidth: certConfig.tanggalAlign === 'right' ? '320px' : '880px', 
+                        maxWidth: certConfig.tanggalAlign === 'right' ? '320px' : '880px',
+                        textAlign: certConfig.tanggalAlign || 'center',
+                        zIndex: 10
+                      }}
                     >
-                      <p className="text-[18px] text-black font-semibold">
+                      <p style={{ fontSize: '18px', color: '#000000', fontWeight: 600, fontFamily: 'sans-serif', margin: 0 }}>
                         {formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}
                       </p>
                     </div>
@@ -957,46 +1048,55 @@ export default function EventDetail() {
                   {/* Penandatangan (TTD) */}
                   {certConfig.showTTD && (
                     <div 
-                      className={`absolute px-[115px] z-10 ${
-                        certConfig.layout === 'Tengah' ? 'flex justify-center' :
-                        certConfig.layout === 'Kanan' ? 'flex justify-end' :
-                        certConfig.layout === 'Kiri' ? 'flex justify-start' :
-                        'flex justify-between'
-                      }`}
-                      style={{ bottom: `${certConfig.ttdBottom || 56}px`, left: 0, width: '1123px', minWidth: '1123px', maxWidth: '1123px' }}
+                      style={{ 
+                        position: 'absolute',
+                        bottom: `${certConfig.ttdBottom || 56}px`, 
+                        left: 0, 
+                        width: '1123px', 
+                        minWidth: '1123px', 
+                        maxWidth: '1123px',
+                        paddingLeft: '115px',
+                        paddingRight: '115px',
+                        boxSizing: 'border-box',
+                        display: 'flex',
+                        justifyContent: certConfig.layout === 'Tengah' ? 'center' :
+                                        certConfig.layout === 'Kanan' ? 'flex-end' :
+                                        certConfig.layout === 'Kiri' ? 'flex-start' : 'space-between',
+                        zIndex: 10
+                      }}
                     >
                       {(certConfig.layout === 'Kiri' || certConfig.layout === 'Kiri-Kanan') && (
-                        <div className="text-center w-[310px] flex flex-col items-center">
+                        <div style={{ textAlign: 'center', width: '310px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                           {event.TTD1_Nama && (
-                            <div className="w-max px-2 border-b border-black pb-0.5">
-                              <p className="font-bold text-[16px] text-black">{event.TTD1_Nama}</p>
+                            <div style={{ width: 'max-content', padding: '0 8px', borderBottom: '1px solid #000000', paddingBottom: '2px' }}>
+                              <p style={{ fontWeight: 'bold', fontSize: '16px', color: '#000000', margin: 0, fontFamily: 'sans-serif' }}>{event.TTD1_Nama}</p>
                             </div>
                           )}
-                          {event.TTD1_NIP && <p className="text-[13px] text-black font-medium mt-0.5">{event.TTD1_NIP}</p>}
+                          {event.TTD1_NIP && <p style={{ fontSize: '13px', color: '#000000', fontWeight: 500, marginTop: '3px', margin: '3px 0 0 0', fontFamily: 'sans-serif' }}>{event.TTD1_NIP}</p>}
                         </div>
                       )}
 
                       {certConfig.layout === 'Tengah' && (
-                        <div className="text-center w-[350px] flex flex-col items-center">
+                        <div style={{ textAlign: 'center', width: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                           {(event.TTD1_Nama || event.TTD2_Nama) && (
-                            <div className="w-max px-2 border-b border-black pb-0.5">
-                              <p className="font-bold text-[16px] text-black">{event.TTD1_Nama || event.TTD2_Nama}</p>
+                            <div style={{ width: 'max-content', padding: '0 8px', borderBottom: '1px solid #000000', paddingBottom: '2px' }}>
+                              <p style={{ fontWeight: 'bold', fontSize: '16px', color: '#000000', margin: 0, fontFamily: 'sans-serif' }}>{event.TTD1_Nama || event.TTD2_Nama}</p>
                             </div>
                           )}
                           {(event.TTD1_NIP || event.TTD2_NIP) && (
-                            <p className="text-[13px] text-black font-medium mt-0.5">{event.TTD1_NIP || event.TTD2_NIP}</p>
+                            <p style={{ fontSize: '13px', color: '#000000', fontWeight: 500, marginTop: '3px', margin: '3px 0 0 0', fontFamily: 'sans-serif' }}>{event.TTD1_NIP || event.TTD2_NIP}</p>
                           )}
                         </div>
                       )}
 
                       {(certConfig.layout === 'Kanan' || certConfig.layout === 'Kiri-Kanan') && (
-                        <div className="text-center w-[320px] flex flex-col items-center">
+                        <div style={{ textAlign: 'center', width: '320px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                           {event.TTD2_Nama && (
-                            <div className="w-max px-2 border-b border-black pb-0.5">
-                              <p className="font-bold text-[15px] text-black">{event.TTD2_Nama}</p>
+                            <div style={{ width: 'max-content', padding: '0 8px', borderBottom: '1px solid #000000', paddingBottom: '2px' }}>
+                              <p style={{ fontWeight: 'bold', fontSize: '15px', color: '#000000', margin: 0, fontFamily: 'sans-serif' }}>{event.TTD2_Nama}</p>
                             </div>
                           )}
-                          {event.TTD2_NIP && <p className="text-[12px] text-black font-medium mt-0.5">{event.TTD2_NIP}</p>}
+                          {event.TTD2_NIP && <p style={{ fontSize: '12px', color: '#000000', fontWeight: 500, marginTop: '3px', margin: '3px 0 0 0', fontFamily: 'sans-serif' }}>{event.TTD2_NIP}</p>}
                         </div>
                       )}
                     </div>
@@ -1149,120 +1249,222 @@ export default function EventDetail() {
                   position: 'relative',
                   backgroundColor: '#ffffff',
                   boxSizing: 'border-box',
+                  padding: '24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
                   WebkitTextSizeAdjust: '100%',
                   textSizeAdjust: '100%',
                 }} 
-                className="flex flex-col items-center justify-center p-10 text-center shrink-0 border-[10px] border-double border-blue-900 overflow-hidden"
               >
-                {/* Subtle background tint */}
+                {/* Outer Double Frame (Classic Certificate Frame) */}
                 <div 
-                  style={{ position: 'absolute', top: 0, left: 0, width: '1123px', height: '794px' }} 
-                  className="bg-slate-50/50 pointer-events-none"
-                />
-
-                {/* Centered Certificate Body */}
-                <div 
-                  style={{ width: '1023px', minWidth: '1023px', maxWidth: '1023px' }}
-                  className="z-10 bg-white p-8 max-h-[92%] flex flex-col items-center justify-center relative rounded-xl shadow-sm border border-gray-300"
+                  style={{ 
+                    width: '1075px', 
+                    height: '746px', 
+                    border: '8px double #1e3a8a', 
+                    borderRadius: '4px',
+                    backgroundColor: '#ffffff',
+                    boxSizing: 'border-box',
+                    padding: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
                 >
-                  <h2 className="text-3xl font-serif font-bold text-blue-950 uppercase tracking-widest text-center border-b-2 border-blue-900 pb-2.5 w-full">
-                    {certConfig.judulHalaman2 || 'HASIL PEMERIKSAAN KESEHATAN / KRITERIA PENILAIAN'}
-                  </h2>
-                  <p className="text-xs text-gray-500 font-medium mt-1 mb-4">
-                    Lampiran Resmi Sertifikat Kegiatan: <strong className="text-gray-800">{event.Judul}</strong>
-                  </p>
-
-                  {/* Participant Information Bar - Centered */}
+                  {/* Inner Accent Line */}
                   <div 
-                    style={{ width: '959px', minWidth: '959px', maxWidth: '959px' }}
-                    className="bg-blue-50/80 border border-blue-200 rounded-lg py-2.5 px-6 mb-4 flex justify-between items-center text-xs"
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      border: '1.5px solid #3b82f6', 
+                      borderRadius: '3px',
+                      boxSizing: 'border-box',
+                      padding: '20px 28px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      position: 'relative',
+                      backgroundColor: '#fafcff'
+                    }}
                   >
-                    <div>
-                      <span className="text-gray-500">Nama Peserta:</span>{' '}
-                      <strong className="text-blue-950 font-bold text-sm">{user.Nama}</strong>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">No. Sertifikat:</span>{' '}
-                      <strong className="text-gray-800 font-mono font-bold">{certificate?.CertNumber || `CERT-${reg?.RegID || 'PREVIEW'}`}</strong>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Tanggal:</span>{' '}
-                      <strong className="text-gray-800 font-semibold">{formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}</strong>
-                    </div>
-                  </div>
+                    {/* Corner Ornaments */}
+                    <div style={{ position: 'absolute', top: '6px', left: '6px', width: '22px', height: '22px', borderTop: '3px solid #1e3a8a', borderLeft: '3px solid #1e3a8a' }}></div>
+                    <div style={{ position: 'absolute', top: '6px', right: '6px', width: '22px', height: '22px', borderTop: '3px solid #1e3a8a', borderRight: '3px solid #1e3a8a' }}></div>
+                    <div style={{ position: 'absolute', bottom: '6px', left: '6px', width: '22px', height: '22px', borderBottom: '3px solid #1e3a8a', borderLeft: '3px solid #1e3a8a' }}></div>
+                    <div style={{ position: 'absolute', bottom: '6px', right: '6px', width: '22px', height: '22px', borderBottom: '3px solid #1e3a8a', borderRight: '3px solid #1e3a8a' }}></div>
 
-                  {/* Centered Criteria Table */}
-                  <div 
-                    style={{ width: '959px', minWidth: '959px', maxWidth: '959px' }}
-                    className="border border-gray-300 rounded-lg overflow-hidden shadow-xs mb-4"
-                  >
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-blue-900 text-white font-semibold">
-                          <th className="py-2.5 px-4 text-center w-14 border-r border-blue-800">NO</th>
-                          <th className="py-2.5 px-6 border-r border-blue-800">KRITERIA PENILAIAN / PARAMETER PEMERIKSAAN</th>
-                          <th className="py-2.5 px-6 text-center w-72">HASIL / KETERANGAN</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200 bg-white">
-                        {assessmentCriteriaList.map((item, idx) => (
-                          <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/70'}>
-                            <td className="py-2.5 px-4 text-center font-bold text-gray-600 border-r border-gray-200">{item.no}</td>
-                            <td className="py-2.5 px-6 font-medium text-gray-900 border-r border-gray-200">{item.nama}</td>
-                            <td className="py-2.5 px-6 text-center font-bold text-emerald-800">
-                              <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md">
-                                {item.hasil}
-                              </span>
-                            </td>
+                    {/* Header Section */}
+                    <div style={{ textAlign: 'center', width: '100%' }}>
+                      <h2 style={{ 
+                        fontFamily: 'serif', 
+                        fontSize: '23px', 
+                        fontWeight: 'bold', 
+                        color: '#1e3a8a', 
+                        textTransform: 'uppercase', 
+                        letterSpacing: '0.08em', 
+                        margin: 0,
+                        paddingBottom: '8px',
+                        borderBottom: '2px solid #1e3a8a',
+                        display: 'inline-block',
+                        minWidth: '500px'
+                      }}>
+                        {certConfig.judulHalaman2 || 'HASIL PEMERIKSAAN KESEHATAN / KRITERIA PENILAIAN'}
+                      </h2>
+                      <p style={{ 
+                        fontSize: '12px', 
+                        fontFamily: 'sans-serif', 
+                        color: '#475569', 
+                        fontWeight: 500, 
+                        margin: '6px 0 0 0' 
+                      }}>
+                        Lampiran Resmi Sertifikat Kegiatan: <strong style={{ color: '#0f172a' }}>{event.Judul}</strong>
+                      </p>
+                    </div>
+
+                    {/* Participant Information Bar */}
+                    <div style={{ 
+                      width: '100%', 
+                      backgroundColor: '#eff6ff', 
+                      border: '1px solid #bfdbfe', 
+                      borderRadius: '6px', 
+                      padding: '8px 24px', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      boxSizing: 'border-box',
+                      fontSize: '12px',
+                      fontFamily: 'sans-serif',
+                      marginTop: '6px',
+                      marginBottom: '8px'
+                    }}>
+                      <div>
+                        <span style={{ color: '#64748b' }}>Nama Peserta:</span>{' '}
+                        <strong style={{ color: '#1e3a8a', fontSize: '13px', marginLeft: '4px' }}>{user.Nama}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748b' }}>No. Sertifikat:</span>{' '}
+                        <strong style={{ color: '#1e293b', fontFamily: 'monospace', fontSize: '12px', marginLeft: '4px' }}>
+                          {certificate?.CertNumber || `CERT-${reg?.RegID || 'PREVIEW'}`}
+                        </strong>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748b' }}>Tanggal:</span>{' '}
+                        <strong style={{ color: '#1e293b', marginLeft: '4px' }}>
+                          {formatDateIndonesian(event.TanggalPelaksanaan || event.TanggalMulai)}
+                        </strong>
+                      </div>
+                    </div>
+
+                    {/* Assessment Table */}
+                    <div style={{ 
+                      width: '100%', 
+                      border: '1px solid #cbd5e1', 
+                      borderRadius: '6px', 
+                      overflow: 'hidden', 
+                      backgroundColor: '#ffffff',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                      flexGrow: 1,
+                      maxHeight: '340px',
+                      boxSizing: 'border-box',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontFamily: 'sans-serif', fontSize: '12px' }}>
+                        <thead>
+                          <tr style={{ backgroundColor: '#1e3a8a', color: '#ffffff' }}>
+                            <th style={{ padding: '9px 12px', textAlign: 'center', width: '55px', borderRight: '1px solid #2563eb', fontWeight: 'bold', fontSize: '11px', letterSpacing: '0.05em' }}>NO</th>
+                            <th style={{ padding: '9px 18px', borderRight: '1px solid #2563eb', fontWeight: 'bold', fontSize: '11px', letterSpacing: '0.05em' }}>KRITERIA PENILAIAN / PARAMETER PEMERIKSAAN</th>
+                            <th style={{ padding: '9px 18px', textAlign: 'center', width: '280px', fontWeight: 'bold', fontSize: '11px', letterSpacing: '0.05em' }}>HASIL / KETERANGAN</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Bottom Signatures if showTTD */}
-                  {certConfig.showTTD && (
-                    <div 
-                      style={{ width: '959px', minWidth: '959px', maxWidth: '959px' }}
-                      className={`px-8 pt-2 flex text-xs text-gray-800 ${
-                        certConfig.layout === 'Tengah' ? 'justify-center' :
-                        certConfig.layout === 'Kanan' ? 'justify-end' :
-                        certConfig.layout === 'Kiri' ? 'justify-start' :
-                        'justify-between'
-                      }`}
-                    >
-                      {(certConfig.layout === 'Kiri' || certConfig.layout === 'Kiri-Kanan') && (
-                        <div className="text-center w-52">
-                          <p className="text-[11px] text-gray-500 mb-8">Pemeriksa / Penanggung Jawab,</p>
-                          <p className="font-bold border-b border-gray-900 pb-0.5">{event.TTD1_Nama || 'Penanggung Jawab 1'}</p>
-                          {event.TTD1_NIP && <p className="text-[10px] text-gray-600">{event.TTD1_NIP}</p>}
-                        </div>
-                      )}
-
-                      {certConfig.layout === 'Tengah' && (
-                        <div className="text-center w-56">
-                          <p className="text-[11px] text-gray-500 mb-8">Pemeriksa / Penanggung Jawab,</p>
-                          <p className="font-bold border-b border-gray-900 pb-0.5">{event.TTD1_Nama || event.TTD2_Nama || 'Penanggung Jawab'}</p>
-                          {(event.TTD1_NIP || event.TTD2_NIP) && <p className="text-[10px] text-gray-600">{event.TTD1_NIP || event.TTD2_NIP}</p>}
-                        </div>
-                      )}
-
-                      {(certConfig.layout === 'Kanan' || certConfig.layout === 'Kiri-Kanan') && (
-                        <div className="text-center w-52">
-                          <p className="text-[11px] text-gray-500 mb-8">Mengetahui / Mengesahkan,</p>
-                          <p className="font-bold border-b border-gray-900 pb-0.5">{event.TTD2_Nama || 'Penanggung Jawab 2'}</p>
-                          {event.TTD2_NIP && <p className="text-[10px] text-gray-600">{event.TTD2_NIP}</p>}
-                        </div>
-                      )}
+                        </thead>
+                        <tbody>
+                          {assessmentCriteriaList.map((item, idx) => (
+                            <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                              <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 'bold', color: '#475569', borderRight: '1px solid #e2e8f0' }}>{item.no}</td>
+                              <td style={{ padding: '8px 18px', fontWeight: 500, color: '#1e293b', borderRight: '1px solid #e2e8f0' }}>{item.nama}</td>
+                              <td style={{ padding: '8px 18px', textAlign: 'center' }}>
+                                <span style={{ 
+                                  display: 'inline-block', 
+                                  padding: '3px 14px', 
+                                  backgroundColor: '#ecfdf5', 
+                                  color: '#065f46', 
+                                  border: '1px solid #a7f3d0', 
+                                  borderRadius: '4px',
+                                  fontWeight: 'bold',
+                                  fontSize: '11px'
+                                }}>
+                                  {item.hasil}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  )}
 
-                  {/* Footer Note */}
-                  <div 
-                    style={{ width: '959px', minWidth: '959px', maxWidth: '959px' }}
-                    className="mt-3 text-center text-[10px] text-gray-400 border-t border-gray-200 pt-2"
-                  >
-                    Dokumen ini diterbitkan secara elektronik dan merupakan lampiran resmi yang sah dari Sertifikat Kegiatan.
+                    {/* Signatures Section */}
+                    {certConfig.showTTD && (
+                      <div style={{ 
+                        width: '100%', 
+                        display: 'flex', 
+                        justifyContent: certConfig.layout === 'Tengah' ? 'center' :
+                                        certConfig.layout === 'Kanan' ? 'flex-end' :
+                                        certConfig.layout === 'Kiri' ? 'flex-start' : 'space-between',
+                        padding: '10px 32px 0 32px',
+                        boxSizing: 'border-box',
+                        fontFamily: 'sans-serif',
+                        fontSize: '12px'
+                      }}>
+                        {(certConfig.layout === 'Kiri' || certConfig.layout === 'Kiri-Kanan') && (
+                          <div style={{ textAlign: 'center', width: '240px' }}>
+                            <p style={{ fontSize: '11px', color: '#64748b', margin: '0 0 45px 0' }}>Pemeriksa / Penanggung Jawab,</p>
+                            <p style={{ fontWeight: 'bold', color: '#0f172a', borderBottom: '1px solid #0f172a', paddingBottom: '2px', margin: '0 auto', display: 'inline-block' }}>
+                              {event.TTD1_Nama || 'Penanggung Jawab 1'}
+                            </p>
+                            {event.TTD1_NIP && <p style={{ fontSize: '10px', color: '#475569', margin: '3px 0 0 0' }}>{event.TTD1_NIP}</p>}
+                          </div>
+                        )}
+
+                        {certConfig.layout === 'Tengah' && (
+                          <div style={{ textAlign: 'center', width: '260px' }}>
+                            <p style={{ fontSize: '11px', color: '#64748b', margin: '0 0 45px 0' }}>Pemeriksa / Penanggung Jawab,</p>
+                            <p style={{ fontWeight: 'bold', color: '#0f172a', borderBottom: '1px solid #0f172a', paddingBottom: '2px', margin: '0 auto', display: 'inline-block' }}>
+                              {event.TTD1_Nama || event.TTD2_Nama || 'Penanggung Jawab'}
+                            </p>
+                            {(event.TTD1_NIP || event.TTD2_NIP) && <p style={{ fontSize: '10px', color: '#475569', margin: '3px 0 0 0' }}>{event.TTD1_NIP || event.TTD2_NIP}</p>}
+                          </div>
+                        )}
+
+                        {(certConfig.layout === 'Kanan' || certConfig.layout === 'Kiri-Kanan') && (
+                          <div style={{ textAlign: 'center', width: '240px' }}>
+                            <p style={{ fontSize: '11px', color: '#64748b', margin: '0 0 45px 0' }}>Mengetahui / Mengesahkan,</p>
+                            <p style={{ fontWeight: 'bold', color: '#0f172a', borderBottom: '1px solid #0f172a', paddingBottom: '2px', margin: '0 auto', display: 'inline-block' }}>
+                              {event.TTD2_Nama || 'Penanggung Jawab 2'}
+                            </p>
+                            {event.TTD2_NIP && <p style={{ fontSize: '10px', color: '#475569', margin: '3px 0 0 0' }}>{event.TTD2_NIP}</p>}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Footer Note */}
+                    <div style={{ 
+                      width: '100%', 
+                      textAlign: 'center', 
+                      fontSize: '10px', 
+                      color: '#94a3b8', 
+                      fontFamily: 'sans-serif',
+                      borderTop: '1px solid #e2e8f0', 
+                      paddingTop: '6px',
+                      margin: '6px 0 0 0'
+                    }}>
+                      Dokumen ini diterbitkan secara elektronik dan merupakan lampiran resmi yang sah dari Sertifikat Kegiatan.
+                    </div>
                   </div>
                 </div>
               </div>
