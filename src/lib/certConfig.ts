@@ -35,7 +35,7 @@ export const DEFAULT_CERT_CONFIG: CertificateConfig = {
   temaAlign: 'center',
   temaTop: 275,
   tanggalAlign: 'center',
-  tanggalTop: 565,
+  tanggalTop: 562,
   ttdBottom: 56,
   bgFit: 'contain',
   showHalaman2: false,
@@ -55,7 +55,7 @@ export function parseCertConfig(configStr?: string, eventTitle?: string): Certif
     showJudul: !isMCU,
     showTema: !isMCU,
     tanggalAlign: isMCU ? 'left' : 'center',
-    tanggalTop: isMCU ? 603 : 565,
+    tanggalTop: isMCU ? 568 : 562,
     showHalaman2: !!isMCU,
     kriteriaPenilaian: isMCU ? [
       { id: '1', nama: 'Tekanan Darah', hasil: 'Normal / Sesuai Standar' },

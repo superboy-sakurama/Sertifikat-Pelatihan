@@ -699,7 +699,7 @@ export default function EventDetail() {
                       <div 
                         className="absolute"
                         style={{ 
-                          top: `${((isMCU ? 603 : certConfig.tanggalTop || 565) / 794) * 100}%`,
+                          top: `${((isMCU ? 576 : certConfig.tanggalTop || 565) / 794) * 100}%`,
                           left: isMCU ? `${(518 / 1123) * 100}%` : certConfig.tanggalAlign === 'left' ? '12%' : certConfig.tanggalAlign === 'right' ? `${(680 / 1123) * 100}%` : '0%',
                           width: isMCU ? `${(300 / 1123) * 100}%` : certConfig.tanggalAlign === 'left' ? '28%' : certConfig.tanggalAlign === 'right' ? `${(260 / 1123) * 100}%` : '100%',
                           textAlign: isMCU ? 'left' : certConfig.tanggalAlign === 'left' ? 'left' : 'center'
@@ -1038,7 +1038,7 @@ export default function EventDetail() {
                     <div 
                       style={{ 
                         position: 'absolute',
-                        top: `${(isMCU ? 603 : certConfig.tanggalTop || 565)}px`, 
+                        top: `${(isMCU ? 576 : certConfig.tanggalTop || 565)}px`, 
                         left: isMCU ? '518px' : certConfig.tanggalAlign === 'left' ? '140px' : certConfig.tanggalAlign === 'right' ? '680px' : '0px',
                         width: isMCU ? '300px' : certConfig.tanggalAlign === 'left' ? '320px' : certConfig.tanggalAlign === 'right' ? '260px' : '1123px',
                         textAlign: isMCU ? 'left' : certConfig.tanggalAlign === 'left' ? 'left' : 'center',
