@@ -194,7 +194,7 @@ export default function CertificateDownload({ data, className = "" }: Certificat
           </div>
 
           {/* 4. Tanggal Pelaksanaan (Di sebelah kanan Tanggal Pemeriksaan :) */}
-          <div className="absolute top-[548px] left-[518px] w-[300px] text-left z-10">
+          <div className="absolute top-[563px] left-[518px] w-[300px] text-left z-10">
             <p className="text-[15px] font-semibold text-gray-900 font-sans">
               {data.tanggalPelaksanaan}
             </p>
