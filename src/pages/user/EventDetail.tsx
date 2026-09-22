@@ -671,7 +671,7 @@ export default function EventDetail() {
                     {/* Nama Peserta: Centered in name slot below DIBERIKAN KEPADA */}
                     <div 
                       className="absolute w-full text-center"
-                      style={{ top: `${(370 / 794) * 100}%` }}
+                      style={{ top: `${(396 / 794) * 100}%` }}
                     >
                       <h1 
                         className="text-lg sm:text-2xl md:text-3xl font-bold text-black"
@@ -681,28 +681,28 @@ export default function EventDetail() {
                       </h1>
                     </div>
 
-                    {/* QR Code & Cert Number: Inside 4th hexagon slot on the right */}
+                    {/* QR Code & Cert Number: Inside hexagon area on the right, shifted left and enlarged */}
                     <div 
                       className="absolute flex flex-col items-center bg-white p-1 rounded shadow-xs border border-gray-200"
                       style={{ 
                         top: `${(418 / 794) * 100}%`,
-                        left: `${(927 / 1123) * 100}%`,
-                        width: `${(74 / 1123) * 100}%`
+                        left: `${(892 / 1123) * 100}%`,
+                        width: `${(86 / 1123) * 100}%`
                       }}
                     >
-                      <QRCodeCanvas value={validationUrl} size={34} level="M" fgColor="#000000" />
-                      <span className="text-[5.5px] sm:text-[6.5px] font-bold text-black font-mono mt-0.5 whitespace-nowrap">{certificate?.CertNumber || 'CERT-PREVIEW'}</span>
+                      <QRCodeCanvas value={validationUrl} size={42} level="M" fgColor="#000000" />
+                      <span className="text-[6px] sm:text-[7px] font-bold text-black font-mono mt-0.5 whitespace-nowrap">{certificate?.CertNumber || 'CERT-PREVIEW'}</span>
                     </div>
 
-                    {/* Tanggal Pelaksanaan: Across from Tanggal Pemeriksaan above right signature */}
+                    {/* Tanggal Pelaksanaan: Positioned across from Tanggal Pemeriksaan : below SEHAT / LAIK SEHAT */}
                     {certConfig.showTanggal && (
                       <div 
                         className="absolute"
                         style={{ 
-                          top: `${((certConfig.tanggalAlign === 'right' || isMCU ? 472 : certConfig.tanggalTop || 565) / 794) * 100}%`,
-                          left: certConfig.tanggalAlign === 'left' ? '12%' : (certConfig.tanggalAlign === 'right' || isMCU) ? `${(680 / 1123) * 100}%` : '0%',
-                          width: certConfig.tanggalAlign === 'left' ? '28%' : (certConfig.tanggalAlign === 'right' || isMCU) ? `${(260 / 1123) * 100}%` : '100%',
-                          textAlign: certConfig.tanggalAlign === 'left' ? 'left' : 'center'
+                          top: `${((isMCU ? 603 : certConfig.tanggalTop || 565) / 794) * 100}%`,
+                          left: isMCU ? `${(518 / 1123) * 100}%` : certConfig.tanggalAlign === 'left' ? '12%' : certConfig.tanggalAlign === 'right' ? `${(680 / 1123) * 100}%` : '0%',
+                          width: isMCU ? `${(300 / 1123) * 100}%` : certConfig.tanggalAlign === 'left' ? '28%' : certConfig.tanggalAlign === 'right' ? `${(260 / 1123) * 100}%` : '100%',
+                          textAlign: isMCU ? 'left' : certConfig.tanggalAlign === 'left' ? 'left' : 'center'
                         }}
                       >
                         <span className="text-[9px] sm:text-[11px] font-semibold text-gray-900 font-sans">
@@ -948,7 +948,7 @@ export default function EventDetail() {
                   <div 
                     style={{ 
                       position: 'absolute',
-                      top: '370px', 
+                      top: '396px', 
                       left: '0px', 
                       width: '1123px', 
                       minWidth: '1123px', 
@@ -975,28 +975,28 @@ export default function EventDetail() {
                     </h2>
                   </div>
                   
-                  {/* QR Code & Cert Number: Placed in the 4th hexagon slot on the right side */}
+                  {/* QR Code & Cert Number: Placed slightly to the left with increased size */}
                   <div 
                     style={{ 
                       position: 'absolute',
                       top: '418px', 
-                      left: '927px',
-                      width: '74px',
-                      minWidth: '74px',
-                      maxWidth: '74px',
+                      left: '892px',
+                      width: '86px',
+                      minWidth: '86px',
+                      maxWidth: '86px',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
                       backgroundColor: '#ffffff',
-                      padding: '4px',
+                      padding: '5px',
                       borderRadius: '6px',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
                       border: '1px solid #e5e7eb',
                       zIndex: 10
                     }}
                   >
-                    <QRCodeCanvas value={validationUrl} size={58} level="M" fgColor="#000000" />
-                    <p style={{ fontSize: '8px', marginTop: '2px', color: '#000000', fontWeight: 'bold', whiteSpace: 'nowrap', fontFamily: 'monospace', margin: '2px 0 0 0', textAlign: 'center' }}>
+                    <QRCodeCanvas value={validationUrl} size={70} level="M" fgColor="#000000" />
+                    <p style={{ fontSize: '8.5px', marginTop: '3px', color: '#000000', fontWeight: 'bold', whiteSpace: 'nowrap', fontFamily: 'monospace', margin: '3px 0 0 0', textAlign: 'center' }}>
                       {certificate?.CertNumber || ''}
                     </p>
                   </div>
@@ -1033,15 +1033,15 @@ export default function EventDetail() {
                     </div>
                   )}
 
-                  {/* Tanggal Pelaksanaan: Positioned across from "Tanggal Pemeriksaan :" above the right signature */}
+                  {/* Tanggal Pelaksanaan: Positioned across from "Tanggal Pemeriksaan :" below SEHAT / LAIK SEHAT */}
                   {certConfig.showTanggal && (
                     <div 
                       style={{ 
                         position: 'absolute',
-                        top: `${(certConfig.tanggalAlign === 'right' || isMCU ? 472 : certConfig.tanggalTop || 565)}px`, 
-                        left: certConfig.tanggalAlign === 'left' ? '140px' : (certConfig.tanggalAlign === 'right' || isMCU) ? '680px' : '0px',
-                        width: certConfig.tanggalAlign === 'left' ? '320px' : (certConfig.tanggalAlign === 'right' || isMCU) ? '260px' : '1123px',
-                        textAlign: certConfig.tanggalAlign === 'left' ? 'left' : 'center',
+                        top: `${(isMCU ? 603 : certConfig.tanggalTop || 565)}px`, 
+                        left: isMCU ? '518px' : certConfig.tanggalAlign === 'left' ? '140px' : certConfig.tanggalAlign === 'right' ? '680px' : '0px',
+                        width: isMCU ? '300px' : certConfig.tanggalAlign === 'left' ? '320px' : certConfig.tanggalAlign === 'right' ? '260px' : '1123px',
+                        textAlign: isMCU ? 'left' : certConfig.tanggalAlign === 'left' ? 'left' : 'center',
                         zIndex: 10
                       }}
                     >

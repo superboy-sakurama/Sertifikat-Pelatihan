@@ -173,29 +173,29 @@ export default function CertificateDownload({ data, className = "" }: Certificat
             </div>
           )}
 
-          {/* 2. Nama Peserta (Tepat di tengah kolom nama yang disediakan) */}
-          <div className="absolute top-[365px] left-0 w-full flex justify-center items-center z-10 px-8">
+          {/* 2. Nama Peserta (Tepat di bawah DIBERIKAN KEPADA) */}
+          <div className="absolute top-[396px] left-0 w-full flex justify-center items-center z-10 px-8">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-950 font-serif tracking-wide text-center">
               {data.namaPeserta}
             </h1>
           </div>
 
-          {/* 3. QR Code & Nomor Sertifikat (Di atas kolom barcode / verifikasi) */}
-          <div className="absolute top-[418px] left-[925px] w-[76px] z-10 flex flex-col items-center bg-white p-1 rounded border border-gray-200 shadow-sm">
+          {/* 3. QR Code & Nomor Sertifikat (Di sebelah kiri cluster ikon hexagon) */}
+          <div className="absolute top-[418px] left-[892px] w-[86px] z-10 flex flex-col items-center bg-white p-1 rounded border border-gray-200 shadow-sm">
             <QRCodeCanvas
               value={data.verifikasiUrl}
-              size={56}
+              size={70}
               level="M"
               fgColor="#000000"
             />
-            <span className="text-[7.5px] font-mono font-bold text-black mt-1 text-center leading-none">
+            <span className="text-[8.5px] font-mono font-bold text-black mt-1 text-center leading-none">
               {data.nomorSertifikat}
             </span>
           </div>
 
-          {/* 4. Tanggal Pelaksanaan (Di atas tanda tangan / kolom tanggal) */}
-          <div className="absolute top-[472px] left-[680px] w-[260px] text-center z-10">
-            <p className="text-[14px] font-semibold text-gray-900 font-sans">
+          {/* 4. Tanggal Pelaksanaan (Di sebelah kanan Tanggal Pemeriksaan :) */}
+          <div className="absolute top-[603px] left-[518px] w-[300px] text-left z-10">
+            <p className="text-[15px] font-semibold text-gray-900 font-sans">
               {data.tanggalPelaksanaan}
             </p>
           </div>

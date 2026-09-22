@@ -54,8 +54,8 @@ export function parseCertConfig(configStr?: string, eventTitle?: string): Certif
     // If it's a legacy Medical Check Up template, its graphic already had the title/theme pre-printed
     showJudul: !isMCU,
     showTema: !isMCU,
-    tanggalAlign: isMCU ? 'right' : 'center',
-    tanggalTop: isMCU ? 472 : 565,
+    tanggalAlign: isMCU ? 'left' : 'center',
+    tanggalTop: isMCU ? 603 : 565,
     showHalaman2: !!isMCU,
     kriteriaPenilaian: isMCU ? [
       { id: '1', nama: 'Tekanan Darah', hasil: 'Normal / Sesuai Standar' },
