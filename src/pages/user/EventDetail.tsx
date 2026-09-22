@@ -329,19 +329,19 @@ export default function EventDetail() {
       const imgData1 = canvas1.toDataURL('image/jpeg', 0.98);
       
       const pdf = new jsPDF({
-        orientation: 'landscape',
+        orientation: 'l',
         unit: 'mm',
         format: 'a4',
         compress: true
       });
       // 297mm x 210mm is exact standard A4 landscape
-      pdf.addImage(imgData1, 'JPEG', 0, 0, 297, 210, undefined, 'FAST');
+      pdf.addImage(imgData1, 'JPEG', 0, 0, 297, 210);
 
       if (hasPage2 && certPage2Ref.current) {
         const canvas2 = await renderCertificateCanvas(certPage2Ref.current);
         const imgData2 = canvas2.toDataURL('image/jpeg', 0.98);
         pdf.addPage('a4', 'l');
-        pdf.addImage(imgData2, 'JPEG', 0, 0, 297, 210, undefined, 'FAST');
+        pdf.addImage(imgData2, 'JPEG', 0, 0, 297, 210);
       }
 
       pdf.save(`Sertifikat_${(event.Judul || 'Kegiatan').replace(/[^a-zA-Z0-9]/g, '_')}_${(user.Nama || 'Peserta').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
@@ -577,7 +577,7 @@ export default function EventDetail() {
                 className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-blue-700 transition shadow-sm text-sm"
               >
                 {actionLoading ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
-                {actionLoading ? 'Memproses PDF A4...' : 'Unduh Sertifikat A4'}
+                {actionLoading ? 'Menyiapkan Dokumen...' : 'Unduh Sertifikat A4'}
               </button>
             </div>
           )}
@@ -847,6 +847,7 @@ export default function EventDetail() {
             }}
           >
             <div 
+              id="certificate-container"
               ref={certRef} 
               style={{ 
                 width: '1123px', 
@@ -862,7 +863,7 @@ export default function EventDetail() {
                 textSizeAdjust: '100%',
                 overflow: 'hidden'
               }} 
-              className={`flex flex-col items-center shrink-0 overflow-hidden ${!backgroundImageUrl ? 'border-[10px] border-double border-blue-900 justify-center' : ''}`}
+              className={`relative w-[1123px] h-[794px] bg-white overflow-hidden text-gray-900 flex flex-col items-center shrink-0 ${!backgroundImageUrl ? 'border-[10px] border-double border-blue-900 justify-center' : ''}`}
             >
               {/* Background Template Image */}
               {backgroundImageUrl && (
@@ -870,17 +871,14 @@ export default function EventDetail() {
                   src={base64Template || (backgroundImageUrl.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(backgroundImageUrl)}` : backgroundImageUrl)} 
                   crossOrigin="anonymous" 
                   alt="Template" 
+                  className="absolute inset-0 w-full h-full object-cover z-0"
                   style={{
                     position: 'absolute',
                     top: 0,
                     left: 0,
                     width: '1123px',
-                    minWidth: '1123px',
-                    maxWidth: '1123px',
                     height: '794px',
-                    minHeight: '794px',
-                    maxHeight: '794px',
-                    objectFit: certConfig.bgFit === 'contain' ? 'contain' : certConfig.bgFit === 'cover' ? 'cover' : 'fill',
+                    objectFit: 'cover',
                     zIndex: 0
                   }}
                 />
