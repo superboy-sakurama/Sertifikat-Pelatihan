@@ -8,6 +8,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [errorType, setErrorType] = useState<'unregistered' | 'wrong_password' | 'general' | null>(null);
+  const [unregisteredEmail, setUnregisteredEmail] = useState('');
   
   // System Status State
   const [sysStatus, setSysStatus] = useState<any>(null);
@@ -50,31 +52,50 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setErrorType(null);
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
 
     try {
       // Fetch users from the 'Users' sheet
       const users = await fetchSheetData('Users');
       
-      if (users.length === 0) {
-        if (sysStatus?.hasUsersTab) {
-          setError('Data Users di Spreadsheet masih kosong. Harap isi baris pertama dengan header: ID, Role, Nama, Email, Password, dan baris kedua dengan data admin.');
-        } else {
-          setError('Sheet "Users" belum ditemukan atau data kosong.');
-        }
+      if (!users || users.length === 0) {
+        setError('Sistem database belum siap atau data pengguna belum tersedia.');
+        setErrorType('general');
         setLoading(false);
         return;
       }
 
-      const user = users.find((u: any) => u.Email === email && u.Password === password);
-      
-      if (user) {
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        navigate('/dashboard');
-      } else {
-        setError('Email atau password salah. (Coba Admin: admin@example.com / 12345)');
+      // Cari data akun berdasarkan email terdaftar (case-insensitive & trimmed)
+      const userWithEmail = users.find((u: any) => 
+        (u.Email || '').toString().trim().toLowerCase() === cleanEmail
+      );
+
+      if (!userWithEmail) {
+        // Email belum terdaftar di database
+        setUnregisteredEmail(email.trim());
+        setErrorType('unregistered');
+        setError(`Email ${email.trim()} belum terdaftar di sistem.`);
+        setLoading(false);
+        return;
       }
+
+      // Verifikasi kata sandi
+      if (String(userWithEmail.Password || '').trim() !== cleanPassword) {
+        setErrorType('wrong_password');
+        setError('Password yang Anda masukkan salah. Silakan periksa kembali kata sandi Anda.');
+        setLoading(false);
+        return;
+      }
+
+      // Berhasil masuk
+      localStorage.setItem('currentUser', JSON.stringify(userWithEmail));
+      navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Gagal terhubung ke Google Sheets API');
+      setErrorType('general');
+      setError(err.message || 'Gagal terhubung ke database. Silakan coba beberapa saat lagi.');
     } finally {
       setLoading(false);
     }
@@ -82,14 +103,9 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-      {/* Connection Indicator */}
-      <div className="max-w-md w-full mb-4">
-        {checkingStatus ? (
-          <div className="bg-white border rounded-lg p-3 text-sm text-gray-500 flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-            Mengecek koneksi database...
-          </div>
-        ) : sysStatus?.status === 'connected' ? (
+      {/* Connection Indicator - Ditampilkan hanya bila ada kendala database */}
+      {sysStatus && (!sysStatus.hasUsersData || sysStatus.status !== 'connected') && (
+        <div className="max-w-md w-full mb-4">
           <div className={`border rounded-lg p-3 text-sm flex items-start gap-3 ${
             sysStatus?.hasUsersData ? 'bg-green-50 border-green-200 text-green-800' : 'bg-yellow-50 border-yellow-200 text-yellow-800'
           }`}>
@@ -119,13 +135,13 @@ export default function Login() {
                 )}
                 
                 {(!sysStatus.hasUsersTab || !sysStatus.hasUsersData) && !sysStatus.hasServiceAccount && (
-                  <p className="mt-2 text-red-600 italic font-medium">Untuk menggunakan Inisialisasi Otomatis, Anda wajib memasukkan GOOGLE_SERVICE_ACCOUNT_EMAIL dan GOOGLE_PRIVATE_KEY di pengaturan AI Studio.</p>
+                  <p className="mt-2 text-red-600 italic font-medium">Untuk menggunakan Inisialisasi Otomatis, Anda wajib memasukkan GOOGLE_SERVICE_ACCOUNT_EMAIL dan GOOGLE_PRIVATE_KEY di pengaturan.</p>
                 )}
               </div>
             </div>
           </div>
-        ) : null}
-      </div>
+        </div>
+      )}
 
       <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-100 p-8">
         <div className="text-center mb-8">
@@ -134,9 +150,35 @@ export default function Login() {
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm mb-6 border border-red-100">
-            {error}
-          </div>
+          errorType === 'unregistered' ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-amber-900 shadow-xs animate-fadeIn">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-amber-100 rounded-lg text-amber-700 shrink-0 mt-0.5">
+                  <UserPlus size={20} />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-sm text-amber-900 mb-1">
+                    Akun Belum Terdaftar
+                  </h4>
+                  <p className="text-xs text-amber-800 leading-relaxed mb-3">
+                    Email <span className="font-semibold text-amber-950 underline decoration-amber-300">{unregisteredEmail}</span> belum terdaftar di sistem. Silakan mendaftar terlebih dahulu untuk dapat mengakses sertifikat & kegiatan Anda.
+                  </p>
+                  <Link
+                    to={`/register?email=${encodeURIComponent(unregisteredEmail)}`}
+                    className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shadow-xs"
+                  >
+                    <UserPlus size={14} />
+                    Daftar sebagai Peserta Baru
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-red-50 text-red-700 p-3.5 rounded-xl text-sm mb-6 border border-red-100 flex items-start gap-2.5">
+              <AlertCircle size={18} className="shrink-0 text-red-500 mt-0.5" />
+              <div className="text-xs sm:text-sm font-medium">{error}</div>
+            </div>
+          )
         )}
 
         <form onSubmit={handleLogin} className="space-y-4">
